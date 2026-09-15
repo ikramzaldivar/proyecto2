@@ -56,7 +56,7 @@ function sendError(res: express.Response, error: unknown, fallback: string): voi
 /**
  * Punto de entrada de la capa UI.
  *
- * La UI nunca accede directamente a MariaDB ni a MinIO;
+ * La UI nunca accede directamente a MariaDB ni al almacenamiento de objetos;
  * únicamente se comunica con la capa Logic.
  */
 const app = express();
@@ -66,7 +66,7 @@ app.use(express.json());
 
 /**
  * Multer mantiene temporalmente la imagen en memoria.
- * El archivo real posteriormente se almacena en MinIO.
+ * El archivo real posteriormente se almacena en el proveedor activo.
  */
 const upload = multer({
   storage: multer.memoryStorage(),

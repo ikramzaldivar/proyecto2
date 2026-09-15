@@ -8,6 +8,11 @@ output "terraform_state_bucket" {
   value       = aws_s3_bucket.terraform_state.bucket
 }
 
+output "app_images_bucket" {
+  description = "Private S3 bucket used by the deployed annotation portal."
+  value       = aws_s3_bucket.app_images.bucket
+}
+
 output "dvc_prod_bucket" {
   description = "Private, versioned S3 bucket used as the DVC PROD remote."
   value       = aws_s3_bucket.dvc_prod.bucket

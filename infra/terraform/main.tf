@@ -71,6 +71,38 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket" "app_images" {
+  bucket        = "${local.name_prefix}-images-${local.account_id}"
+  force_destroy = false
+}
+
+resource "aws_s3_bucket_versioning" "app_images" {
+  bucket = aws_s3_bucket.app_images.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "app_images" {
+  bucket = aws_s3_bucket.app_images.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "app_images" {
+  bucket = aws_s3_bucket.app_images.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_s3_bucket" "dvc_prod" {
   bucket        = "${local.name_prefix}-dvc-${local.account_id}"
   force_destroy = false

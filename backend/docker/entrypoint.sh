@@ -2,7 +2,10 @@
 set -e
 
 node docker/wait-for.mjs "${DB_HOST}" "${DB_PORT}"
-node docker/wait-for.mjs "${MINIO_ENDPOINT}" "${MINIO_PORT}"
+
+if [ "${STORAGE_PROVIDER:-minio}" = "minio" ]; then
+  node docker/wait-for.mjs "${MINIO_ENDPOINT}" "${MINIO_PORT}"
+fi
 
 echo "[entrypoint] Aplicando migraciones..."
 npm run db:migrate
