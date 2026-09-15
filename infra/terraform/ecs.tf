@@ -78,6 +78,8 @@ resource "aws_ecs_task_definition" "backend" {
       { name = "DB_PORT", value = tostring(aws_db_instance.app.port) },
       { name = "DB_USER", value = var.db_username },
       { name = "DB_NAME", value = var.db_name },
+      { name = "DB_SSL", value = "true" },
+      { name = "DB_SSL_CA_PATH", value = "/etc/ssl/certs/aws-rds-global-bundle.pem" },
       { name = "STORAGE_PROVIDER", value = "s3" },
       { name = "AWS_REGION", value = var.aws_region },
       { name = "S3_BUCKET", value = aws_s3_bucket.app_images.bucket }

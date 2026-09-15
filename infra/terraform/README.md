@@ -10,6 +10,7 @@ This directory adds the AWS PROD environment without replacing the evaluator's l
 - ECS/Fargate runs the frontend and backend in independent tasks and services.
 - A public Application Load Balancer routes `/api/*` to the backend and all other paths to the frontend.
 - RDS MariaDB runs in private database subnets and manages its master password in Secrets Manager.
+- Backend connections to RDS require TLS and verify the endpoint with the AWS global RDS CA bundle.
 - Uploaded portal images use a dedicated private S3 bucket through the backend task role.
 - Fargate tasks use public subnets and public IPs for outbound ECR/S3 access, but their security groups accept inbound traffic only from the ALB. This avoids a NAT Gateway for this academic environment.
 

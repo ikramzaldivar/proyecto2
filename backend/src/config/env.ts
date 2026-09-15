@@ -22,6 +22,13 @@ const envSchema = z
 
     DB_NAME: z.string().min(1).optional(),
 
+    DB_SSL: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+
+    DB_SSL_CA_PATH: z.string().min(1).default('/etc/ssl/certs/aws-rds-global-bundle.pem'),
+
     STORAGE_PROVIDER: z.enum(['minio', 's3']).default('minio'),
 
     MINIO_ENDPOINT: z.string().min(1).optional(),
