@@ -10,7 +10,17 @@ const envSchema = z
 
     PORT: z.coerce.number().int().positive().default(3000),
 
-    DATABASE_URL: z.string().min(1),
+    DATABASE_URL: z.string().min(1).optional(),
+
+    DB_HOST: z.string().min(1).optional(),
+
+    DB_PORT: z.coerce.number().int().positive().default(3306),
+
+    DB_USER: z.string().min(1).optional(),
+
+    DB_PASSWORD: z.string().min(1).optional(),
+
+    DB_NAME: z.string().min(1).optional(),
 
     STORAGE_PROVIDER: z.enum(['minio', 's3']).default('minio'),
 
@@ -40,6 +50,18 @@ const envSchema = z
       .default(5 * 1024 * 1024),
   })
   .superRefine((value, context) => {
+    if (!value.DATABASE_URL) {
+      for (const field of ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'] as const) {
+        if (!value[field]) {
+          context.addIssue({
+            code: 'custom',
+            path: [field],
+            message: `${field} es obligatoria cuando DATABASE_URL no está definida.`,
+          });
+        }
+      }
+    }
+
     if (value.STORAGE_PROVIDER === 'minio') {
       for (const field of [
         'MINIO_ENDPOINT',

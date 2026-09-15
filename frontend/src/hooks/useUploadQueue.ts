@@ -28,7 +28,14 @@ export interface PendingEntry {
 }
 
 function makeClientId(): string {
-  return `upload-${crypto.randomUUID()}`;
+  if (typeof crypto.randomUUID === "function") {
+    return `upload-${crypto.randomUUID()}`;
+  }
+
+  // randomUUID no siempre está disponible cuando el portal se sirve por HTTP.
+  // El backend genera el identificador persistente; este valor solo identifica
+  // temporalmente un elemento de la cola en el navegador.
+  return `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export function useUploadQueue(

@@ -16,6 +16,7 @@
     "format": "biome format --write .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:runtime": "node dist/data/db/migrate.js",
     "db:seed": "tsx src/data/seed.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"

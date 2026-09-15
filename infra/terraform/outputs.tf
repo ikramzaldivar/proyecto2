@@ -22,3 +22,18 @@ output "dataset_releases_bucket" {
   description = "Private S3 bucket with Governance Object Lock for approved releases."
   value       = aws_s3_bucket.releases.bucket
 }
+
+output "application_url" {
+  description = "Public URL of the annotation portal."
+  value       = "http://${aws_lb.app.dns_name}"
+}
+
+output "ecs_cluster_name" {
+  description = "ECS cluster that runs the independent frontend and backend services."
+  value       = aws_ecs_cluster.app.name
+}
+
+output "rds_endpoint" {
+  description = "Private MariaDB endpoint used by the backend."
+  value       = aws_db_instance.app.endpoint
+}

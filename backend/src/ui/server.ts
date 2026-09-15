@@ -65,6 +65,20 @@ const port = env.PORT;
 app.use(express.json());
 
 /**
+ * El ALB conserva el path original al enrutar `/api/*` al backend.
+ * La API mantiene sus rutas internas sin prefijo para seguir siendo compatible
+ * con el proxy Nginx del entorno local, que ya elimina `/api`.
+ */
+app.use((req, _res, next) => {
+  if (req.url === '/api') {
+    req.url = '/';
+  } else if (req.url.startsWith('/api/')) {
+    req.url = req.url.slice(4);
+  }
+  next();
+});
+
+/**
  * Multer mantiene temporalmente la imagen en memoria.
  * El archivo real posteriormente se almacena en el proveedor activo.
  */

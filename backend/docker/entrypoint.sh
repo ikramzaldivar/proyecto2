@@ -8,7 +8,7 @@ if [ "${STORAGE_PROVIDER:-minio}" = "minio" ]; then
 fi
 
 echo "[entrypoint] Aplicando migraciones..."
-npm run db:migrate
+npm run db:migrate:runtime
 
 echo "[entrypoint] Sembrando datos de ejemplo..."
 npm run db:seed
