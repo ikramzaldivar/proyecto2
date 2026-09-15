@@ -8,14 +8,14 @@ locals {
     for index, availability_zone in local.availability_zones :
     tostring(index) => {
       availability_zone = availability_zone
-      cidr_block         = cidrsubnet("10.20.0.0/16", 8, index)
+      cidr_block        = cidrsubnet("10.20.0.0/16", 8, index)
     }
   }
   database_subnets = {
     for index, availability_zone in local.availability_zones :
     tostring(index) => {
       availability_zone = availability_zone
-      cidr_block         = cidrsubnet("10.20.0.0/16", 8, index + 10)
+      cidr_block        = cidrsubnet("10.20.0.0/16", 8, index + 10)
     }
   }
 }
