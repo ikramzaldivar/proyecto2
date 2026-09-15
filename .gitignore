@@ -19,3 +19,16 @@ Thumbs.db
 # Caché de herramientas
 .vite/
 coverage/
+
+# Terraform: caché, estado local, planes y archivos con posibles secretos
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.tfstate.lock.info
