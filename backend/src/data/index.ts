@@ -38,10 +38,10 @@ export {
   findRecentImages,
   updateImageStatus,
 } from './repositories/image.repository.js';
-// Funciones de almacenamiento en MinIO.
+// Funciones de almacenamiento seleccionadas por ambiente (MinIO DEV o S3 PROD).
 export {
   deleteImageObject,
-  ensureMinioBucket,
+  ensureObjectBucket,
   getImageObjectStream,
   uploadImageObject,
-} from './storage/minio.storage.js';
+} from './storage/object.storage.js';

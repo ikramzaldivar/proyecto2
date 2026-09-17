@@ -8,7 +8,7 @@ export interface ImageFile {
 }
 
 /**
- * Obtiene el binario de una imagen desde MinIO junto con su mime type.
+ * Obtiene el binario de una imagen desde el proveedor activo junto con su mime type.
  * Devuelve null si la imagen no existe en MariaDB.
  */
 export async function getImageFile(imageId: number): Promise<ImageFile | null> {
