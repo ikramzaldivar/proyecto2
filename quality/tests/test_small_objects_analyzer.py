@@ -1,5 +1,5 @@
 from dataset_quality.analyzers.small_objects import analyze_small_objects
-from dataset_quality.models.coco import CocoAnnotation, CocoCategory, CocoDataset, CocoImage
+from dataset_quality.models.coco import CocoDataset
 from dataset_quality.models.config import CheckConfig
 
 # Umbral: 32 px -> área mínima = 32*32 = 1024 px².
@@ -21,6 +21,17 @@ CAR_ID = 1
 PERSON_ID = 2
 
 
+def _annotation(annotation_id: int, category_id: int, size: int, area: int) -> dict:
+    return {
+        "id": annotation_id,
+        "image_id": 1,
+        "category_id": category_id,
+        "bbox": [0, 0, size, size],
+        "area": area,
+        "iscrowd": 0,
+    }
+
+
 def _build_dataset() -> CocoDataset:
     return CocoDataset.model_validate(
         {
@@ -30,11 +41,11 @@ def _build_dataset() -> CocoDataset:
                 {"id": PERSON_ID, "name": "person"},
             ],
             "annotations": [
-                {"id": 1, "image_id": 1, "category_id": CAR_ID, "bbox": [0, 0, 10, 10], "area": 100, "iscrowd": 0},
-                {"id": 2, "image_id": 1, "category_id": CAR_ID, "bbox": [0, 0, 50, 50], "area": 2500, "iscrowd": 0},
-                {"id": 3, "image_id": 1, "category_id": PERSON_ID, "bbox": [0, 0, 5, 5], "area": 25, "iscrowd": 0},
-                {"id": 4, "image_id": 1, "category_id": PERSON_ID, "bbox": [0, 0, 100, 100], "area": 10000, "iscrowd": 0},
-                {"id": 5, "image_id": 1, "category_id": PERSON_ID, "bbox": [0, 0, 3, 3], "area": 9, "iscrowd": 0},
+                _annotation(1, CAR_ID, 10, 100),
+                _annotation(2, CAR_ID, 50, 2500),
+                _annotation(3, PERSON_ID, 5, 25),
+                _annotation(4, PERSON_ID, 100, 10000),
+                _annotation(5, PERSON_ID, 3, 9),
             ],
         }
     )
@@ -71,7 +82,8 @@ def test_lists_offending_samples_with_their_dimensions() -> None:
 def test_changing_the_threshold_changes_the_result() -> None:
     # CAL 03: "cambiar el YAML cambia el resultado" — aquí simulamos ese
     # cambio pasando un CheckConfig distinto, sin tocar el analizador.
-    lenient_report = analyze_small_objects(_build_dataset(), CheckConfig(threshold=4, severity="warn"))
+    config = CheckConfig(threshold=4, severity="warn")
+    lenient_report = analyze_small_objects(_build_dataset(), config)
 
     # Con umbral 4px (área mínima 16), solo la anotación 5 (3x3=9) califica.
     assert lenient_report.small_count == 1
