@@ -2,7 +2,7 @@
 name = "dataset-quality"
 version = "0.1.0"
 description = "Validación, análisis y compuerta de calidad para el dataset COCO del Proyecto 1"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.4",
