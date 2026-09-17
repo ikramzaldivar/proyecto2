@@ -9,5 +9,6 @@ COPY src/ ./src/
 RUN pip install --no-cache-dir --no-deps -e .
 
 COPY tests/ ./tests/
+COPY quality.yaml ./quality.yaml
 
 CMD ["pytest"]
