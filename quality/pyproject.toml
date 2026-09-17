@@ -1,0 +1,34 @@
+[project]
+name = "dataset-quality"
+version = "0.1.0"
+description = "Validación, análisis y compuerta de calidad para el dataset COCO del Proyecto 1"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dataset_quality"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+# E/F: errores y pyflakes básicos. I: imports ordenados. UP: sintaxis moderna
+# de 3.12 (evita patrones viejos). B: bugbear, atrapa errores sutiles comunes.
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
