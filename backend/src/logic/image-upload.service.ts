@@ -30,7 +30,7 @@ export interface UploadImageResult {
 }
 
 /**
- * Valida y guarda una imagen en MinIO y sus metadatos en MariaDB.
+ * Valida y guarda una imagen en el proveedor activo y sus metadatos en MariaDB.
  */
 export async function uploadImage(input: UploadImageInput): Promise<UploadImageResult> {
   // Valida tipo MIME y tamaño.
@@ -59,10 +59,10 @@ export async function uploadImage(input: UploadImageInput): Promise<UploadImageR
     throw new ValidationError('No se pudieron obtener las dimensiones de la imagen.');
   }
 
-  // Genera una key única para evitar colisiones en MinIO.
+  // Genera una key única para evitar colisiones en el almacenamiento de objetos.
   const storageKey = `images/${randomUUID()}`;
 
-  // Primero guarda el archivo real en MinIO.
+  // Primero guarda el archivo real en el proveedor activo.
   await uploadImageObject(storageKey, input.buffer, input.mimeType);
 
   try {
@@ -84,7 +84,7 @@ export async function uploadImage(input: UploadImageInput): Promise<UploadImageR
       height: metadata.height,
     };
   } catch (error) {
-    // Si MariaDB falla, elimina el objeto para no dejar basura en MinIO.
+    // Si MariaDB falla, elimina el objeto para no dejar basura.
     await deleteImageObject(storageKey).catch(() => undefined);
 
     throw error;
@@ -93,7 +93,7 @@ export async function uploadImage(input: UploadImageInput): Promise<UploadImageR
 
 /**
  * Borra una imagen: su registro en MariaDB (con sus anotaciones, en
- * cascada) y su archivo real en MinIO.
+ * cascada) y su archivo real en el proveedor activo.
  */
 export async function deleteImage(imageId: number): Promise<void> {
   const image = await findImageById(imageId);
