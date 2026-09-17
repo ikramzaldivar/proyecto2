@@ -104,8 +104,10 @@ def test_pipeline_settings_loads_from_env(monkeypatch: pytest.MonkeyPatch) -> No
     assert settings.coco_source_path == "/data/dataset.json"
 
 
-def test_pipeline_settings_rejects_extra_field(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("DATASET_QUALITY_COCO_SOURCE_PATH", "/data/dataset.json")
-    monkeypatch.setenv("DATASET_QUALITY_OOPS", "surprise")
+def test_pipeline_settings_rejects_extra_field() -> None:
+    # pydantic-settings solo lee las variables de entorno que coinciden con
+    # un campo declarado — una env var "extra" con el prefijo correcto nunca
+    # llega al modelo, así que no hay nada que rechazar por esa vía. Para
+    # probar extra="forbid" de verdad, se pasa el campo extra directo.
     with pytest.raises(ValidationError, match="extra"):
-        PipelineSettings(_env_file=None)
+        PipelineSettings(coco_source_path="/data/dataset.json", oops="surprise", _env_file=None)
