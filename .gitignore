@@ -19,3 +19,11 @@ Thumbs.db
 # Caché de herramientas
 .vite/
 coverage/
+
+# Python (quality/)
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
