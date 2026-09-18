@@ -115,6 +115,11 @@ const DIFF_FIXTURE = {
   invalidBoxesDelta: 0,
   classesThatLeftMinimum: [3],
   classesThatEnteredMinimum: [],
+  classCountChanges: [
+    { categoryId: 1, from: 1400, to: 1600, delta: 200 },
+    { categoryId: 2, from: 1300, to: 1500, delta: 200 },
+    { categoryId: 3, from: 320, to: 290, delta: -30 },
+  ],
   totals: {
     from: { images: 3020, annotations: 28100, categories: 3 },
     to: { images: 3390, annotations: 30500, categories: 3 },
@@ -203,5 +208,20 @@ describe('SPEC-QUALITY-UI-005 — Versions', () => {
     const diff = within(screen.getByTestId('version-diff'));
     expect(diff.getByText(/370/)).toBeInTheDocument();
     expect(diff.getByText(/dog|#3/)).toBeInTheDocument();
+  });
+
+  it('compara el conteo por clase entre las dos versiones', () => {
+    mocks.versions = { status: 'success', data: VERSIONS_FIXTURE };
+    mocks.diff = { status: 'success', data: DIFF_FIXTURE };
+    render(
+      <MemoryRouter>
+        <VersionsPage />
+      </MemoryRouter>,
+    );
+
+    const classes = within(screen.getByTestId('version-diff-classes'));
+    expect(classes.getByTestId('class-diff-1')).toHaveTextContent('#1');
+    expect(classes.getByTestId('class-diff-1')).toHaveTextContent('+200');
+    expect(classes.getByTestId('class-diff-3')).toHaveTextContent('-30');
   });
 });
