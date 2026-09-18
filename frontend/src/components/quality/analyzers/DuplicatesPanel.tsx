@@ -1,4 +1,5 @@
 import type { CategoryRef, DuplicatesReport } from "../../../api/quality";
+import { CategoryBarChart, type CategoryBarDatum } from "../CategoryBarChart";
 import { QualityStat } from "../QualityStat";
 import { SampleImage } from "../SampleImage";
 
@@ -13,6 +14,11 @@ export function DuplicatesPanel({
   // detalle de duplicados es entre imágenes, no por categoría.
   void categories;
 
+  const distanceData: CategoryBarDatum[] = report.pairs.map((pair) => ({
+    name: `#${pair.image_id_a}·#${pair.image_id_b}`,
+    value: pair.distance,
+  }));
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -21,6 +27,8 @@ export function DuplicatesPanel({
         <QualityStat label="Umbral de distancia" value={report.threshold} />
         <QualityStat label="Severidad" value={report.severity} />
       </div>
+
+      <CategoryBarChart data={distanceData} valueLabel="Distancia pHash por par" color="#2FAF87" />
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-ink">Pares (pHash)</h3>
