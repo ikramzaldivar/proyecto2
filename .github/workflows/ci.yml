@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/terraform
+        working-directory: infra/terraform/envs/prod
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +47,7 @@ jobs:
 
       # Estas tres no necesitan credenciales: corren siempre.
       - name: Format
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check -recursive ../..
 
       - name: Init sin backend
         run: terraform init -backend=false

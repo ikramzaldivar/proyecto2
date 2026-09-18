@@ -1,0 +1,7 @@
+# Mismo bucket que PROD, otra llave: un solo bucket de estado por cuenta,
+# un estado separado por ambiente.
+bucket       = "proyecto2-prod-tfstate-595981034933"
+key          = "dev/terraform.tfstate"
+region       = "us-east-2"
+encrypt      = true
+use_lockfile = true

@@ -1,13 +1,21 @@
+/**
+ * Managed MariaDB, in private subnets and not publicly reachable.
+ *
+ * The password is generated and rotated by RDS in Secrets Manager
+ * (`manage_master_user_password`): it never passes through Terraform or the
+ * state file.
+ */
+
 resource "aws_db_subnet_group" "app" {
-  name       = "${local.name_prefix}-database"
-  subnet_ids = values(aws_subnet.database)[*].id
+  name       = "${var.name_prefix}-database"
+  subnet_ids = var.subnet_ids
 }
 
 resource "aws_db_instance" "app" {
-  identifier = "${local.name_prefix}-mariadb"
+  identifier = "${var.name_prefix}-mariadb"
 
   engine                      = "mariadb"
-  instance_class              = var.db_instance_class
+  instance_class              = var.instance_class
   allocated_storage           = 20
   max_allocated_storage       = 30
   storage_type                = "gp3"
@@ -18,7 +26,7 @@ resource "aws_db_instance" "app" {
   port                        = 3306
 
   db_subnet_group_name   = aws_db_subnet_group.app.name
-  vpc_security_group_ids = [aws_security_group.database.id]
+  vpc_security_group_ids = [var.security_group_id]
   publicly_accessible    = false
   multi_az               = false
 
