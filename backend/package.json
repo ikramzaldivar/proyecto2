@@ -12,6 +12,8 @@
     "start:prod": "cross-env NODE_ENV=production PORT=3100 node dist/ui/server.js",
     "embeddings": "tsx src/tools/precompute-embeddings.ts",
     "embeddings:prod": "node dist/tools/precompute-embeddings.js",
+    "mcp": "tsx src/mcp/server.ts",
+    "mcp:prod": "node dist/mcp/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
