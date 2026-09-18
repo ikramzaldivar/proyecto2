@@ -15,10 +15,11 @@ export function DuplicatesPanel({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <QualityStat label="Grupos de duplicados" value={report.duplicate_groups.length} />
         <QualityStat label="Pares detectados" value={report.pairs.length} />
         <QualityStat label="Umbral de distancia" value={report.threshold} />
+        <QualityStat label="Severidad" value={report.severity} />
       </div>
 
       <div>

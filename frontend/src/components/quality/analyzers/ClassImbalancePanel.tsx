@@ -26,11 +26,13 @@ export function ClassImbalancePanel({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <QualityStat
           label="Ratio mayoritaria / minoritaria"
           value={report.ratio === null ? "—" : report.ratio.toFixed(2)}
         />
+        <QualityStat label="Umbral de ratio" value={report.threshold} />
+        <QualityStat label="Severidad" value={report.severity} />
         <QualityStat label="Clase mayoritaria" value={label(report.majority_category_id)} />
         <QualityStat label="Clase minoritaria" value={label(report.minority_category_id)} />
         <QualityStat label="Clases bajo el mínimo" value={belowMinimum} />

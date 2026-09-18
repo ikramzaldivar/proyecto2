@@ -21,6 +21,12 @@ function OverviewSkeleton() {
   );
 }
 
+function gateDisplayStatus(gate: OverviewView["gate"]): "pass" | "warn" | "fail" {
+  if (gate.failCount > 0 || gate.overallStatus === "fail") return "fail";
+  if (gate.warnCount > 0) return "warn";
+  return "pass";
+}
+
 function OverviewContent({ data }: { data: OverviewView }) {
   return (
     <div className="space-y-6">
@@ -30,7 +36,7 @@ function OverviewContent({ data }: { data: OverviewView }) {
         <span className="text-xs text-ink-faint">Generado {data.generatedAt}</span>
         <span className="ml-auto flex items-center gap-2">
           <span data-testid="gate-status">
-            <QualityStatusBadge status={data.gate.overallStatus} />
+            <QualityStatusBadge status={gateDisplayStatus(data.gate)} />
           </span>
           <span className="text-xs text-ink-muted">
             {data.gate.passCount} pass · {data.gate.warnCount} warn · {data.gate.failCount} fail

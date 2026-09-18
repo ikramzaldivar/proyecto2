@@ -32,13 +32,14 @@ export function SmallObjectsPanel({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <QualityStat
           label="Objetos pequeños"
           value={`${report.small_count} de ${report.total_annotations}`}
         />
         <QualityStat label="Porcentaje" value={`${report.small_percent.toFixed(2)}%`} />
         <QualityStat label="Umbral" value={`${report.threshold_px} px`} />
+        <QualityStat label="Severidad" value={report.severity} />
         <QualityStat label="Clase más afectada" value={mostAffected} />
       </div>
 

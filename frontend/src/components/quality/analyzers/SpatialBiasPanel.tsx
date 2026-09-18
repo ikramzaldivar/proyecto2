@@ -54,6 +54,8 @@ export function SpatialBiasPanel({
         <QualityStat label="Centro medio X" value={report.global_stats.mean_x.toFixed(3)} />
         <QualityStat label="Centro medio Y" value={report.global_stats.mean_y.toFixed(3)} />
         <QualityStat label="Dispersión X" value={report.global_stats.std_x.toFixed(3)} />
+        <QualityStat label="Umbral" value={report.threshold} />
+        <QualityStat label="Severidad" value={report.severity} />
       </div>
 
       <StatsTable title="Estadística global (centro normalizado 0–1)" stats={report.global_stats} />

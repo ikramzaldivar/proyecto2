@@ -163,6 +163,19 @@ function SettingsForm({ initial }: { initial: QualitySettings }) {
           compuerta.
         </span>
       </div>
+
+      <section className="rounded-2xl border border-border bg-surface p-4 shadow-card">
+        <h2 className="text-sm font-semibold text-ink">Volver a ejecutar el Quality Gate</h2>
+        <p className="mt-1 text-xs text-ink-muted">
+          Después de guardar, corre el pipeline de calidad (Frente 2) para aplicar la nueva
+          política:
+        </p>
+        <pre className="mt-2 overflow-x-auto rounded-xl bg-canvas p-3 font-mono text-xs text-ink">
+          <code>
+            {`python -m dataset_quality.cli --coco dataset.json --config quality.yaml --images-dir images/ --output output/quality.json`}
+          </code>
+        </pre>
+      </section>
     </form>
   );
 }

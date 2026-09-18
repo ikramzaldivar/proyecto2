@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -170,8 +170,9 @@ describe('SPEC-QUALITY-UI-003 — Analyzers', () => {
 
     for (const tab of tabs) {
       fireEvent.click(screen.getByRole('tab', { name: tab }));
-      expect(screen.getByText(/umbral/i)).toBeInTheDocument();
-      expect(screen.getByText(/severidad/i)).toBeInTheDocument();
+      const panel = within(screen.getByRole('tabpanel'));
+      expect(panel.getByText(/umbral/i)).toBeInTheDocument();
+      expect(panel.getByText(/severidad/i)).toBeInTheDocument();
     }
   });
 
