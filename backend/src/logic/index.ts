@@ -55,6 +55,52 @@ export type {
 export { searchImages } from './image-search.service.js';
 export { setImageStatus } from './image-status.service.js';
 export { deleteImage, uploadImage } from './image-upload.service.js';
+export type {
+  AnalyzersBundle,
+  CategoryRef,
+  CheckResult,
+  CheckStatus,
+  ClassCountComparison,
+  DatasetTotals,
+  EmbeddingBundle,
+  EmbeddingPoint,
+  LeakageReport,
+  QualityGate,
+  ReannotationQueueItem,
+  ReleaseBundle,
+  Severity,
+  SplitDistribution,
+  VersionEntry,
+  VersionsFile,
+} from './quality/contracts.js';
+export {
+  parseEmbeddings,
+  parseReleaseBundle,
+  parseVersions,
+} from './quality/contracts.js';
+// Frente 3 — artefactos del pipeline de calidad (SPEC-QUALITY-API-001..007)
+export type {
+  AnalyzersView,
+  GateSummary,
+  OverviewView,
+  SplitsView,
+  VersionDiff,
+} from './quality/quality.service.js';
+export {
+  buildAnalyzers,
+  buildOverview,
+  buildSplits,
+  diffVersions,
+} from './quality/quality.service.js';
+export {
+  getAnalyzers,
+  getEmbeddings,
+  getOverview,
+  getReannotationQueue,
+  getSplits,
+  getVersionDiff,
+  getVersions,
+} from './quality/quality-artifacts.service.js';
 // Parser de operadores de búsqueda (SPEC-SEARCH-001)
 export type { ParsedSearchQuery, SearchOperator } from './search-query.parser.js';
 export { parseSearchQuery } from './search-query.parser.js';
