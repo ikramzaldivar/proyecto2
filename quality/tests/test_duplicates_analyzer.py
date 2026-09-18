@@ -46,3 +46,21 @@ def test_single_image_produces_no_pairs() -> None:
     report = analyze_duplicates({1: "ffffffffffffffff"}, CheckConfig(threshold=8, severity="warn"))
     assert report.pairs == []
     assert report.duplicate_groups == []
+
+
+def test_pairs_include_a_normalized_similarity_percentage() -> None:
+    # 16 caracteres hex = 64 bits totales -> similitud = (1 - distancia/64) * 100
+    hashes = {1: "ffffffffffffffff", 2: "fffffffffffffffe"}
+    report = analyze_duplicates(hashes, CheckConfig(threshold=2, severity="warn"))
+
+    pair = report.pairs[0]
+    assert pair.distance == 1
+    assert round(pair.similarity_percent, 2) == 98.44
+
+
+def test_identical_hashes_have_100_percent_similarity() -> None:
+    hashes = {1: "ffffffffffffffff", 2: "ffffffffffffffff"}
+    report = analyze_duplicates(hashes, CheckConfig(threshold=0, severity="warn"))
+
+    assert report.pairs[0].distance == 0
+    assert report.pairs[0].similarity_percent == 100.0
