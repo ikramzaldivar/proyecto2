@@ -1,0 +1,5 @@
+# Use the immutable Git commit tag pushed to both ECR repositories.
+container_image_tag = "replace-with-git-sha"
+
+# DEV no deberia estar abierto a internet. Pon aqui la IP publica del equipo.
+allowed_http_cidrs = ["0.0.0.0/0"]

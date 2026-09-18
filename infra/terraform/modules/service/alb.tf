@@ -1,17 +1,25 @@
+/**
+ * Public load balancer and routing to the two services.
+ *
+ * Everything goes to the frontend by default. The `backend_api` rule sends
+ * `/api` and `/api/*` to the backend; the backend strips that prefix itself,
+ * so the same image still works behind the local Nginx proxy.
+ */
+
 resource "aws_lb" "app" {
-  name               = "${local.name_prefix}-alb"
+  name               = "${var.name_prefix}-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = values(aws_subnet.public)[*].id
+  security_groups    = [var.alb_security_group_id]
+  subnets            = var.public_subnet_ids
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name        = "${local.name_prefix}-frontend"
+  name        = "${var.name_prefix}-frontend"
   port        = 80
   protocol    = "HTTP"
   target_type = "ip"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
   health_check {
     enabled             = true
@@ -25,11 +33,11 @@ resource "aws_lb_target_group" "frontend" {
 }
 
 resource "aws_lb_target_group" "backend" {
-  name        = "${local.name_prefix}-backend"
+  name        = "${var.name_prefix}-backend"
   port        = 3100
   protocol    = "HTTP"
   target_type = "ip"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
   health_check {
     enabled             = true

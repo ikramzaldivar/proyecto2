@@ -1,3 +1,14 @@
+/**
+ * Environment network: VPC, public and database subnets, routing, the four
+ * chained security groups (alb -> frontend/backend -> database) and the S3
+ * gateway endpoint.
+ *
+ * The security groups live here rather than next to what they protect because
+ * they reference each other: the database ingress rule points at the backend
+ * group, and the backend one at the ALB group. Splitting them across modules
+ * would create a cycle.
+ */
+
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -8,29 +19,29 @@ locals {
     for index, availability_zone in local.availability_zones :
     tostring(index) => {
       availability_zone = availability_zone
-      cidr_block        = cidrsubnet("10.20.0.0/16", 8, index)
+      cidr_block        = cidrsubnet(var.vpc_cidr, 8, index)
     }
   }
   database_subnets = {
     for index, availability_zone in local.availability_zones :
     tostring(index) => {
       availability_zone = availability_zone
-      cidr_block        = cidrsubnet("10.20.0.0/16", 8, index + 10)
+      cidr_block        = cidrsubnet(var.vpc_cidr, 8, index + 10)
     }
   }
 }
 
 resource "aws_vpc" "main" {
-  cidr_block           = "10.20.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = { Name = "${local.name_prefix}-vpc" }
+  tags = { Name = "${var.name_prefix}-vpc" }
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-  tags   = { Name = "${local.name_prefix}-igw" }
+  tags   = { Name = "${var.name_prefix}-igw" }
 }
 
 resource "aws_subnet" "public" {
@@ -41,7 +52,7 @@ resource "aws_subnet" "public" {
   cidr_block              = each.value.cidr_block
   map_public_ip_on_launch = true
 
-  tags = { Name = "${local.name_prefix}-public-${each.value.availability_zone}" }
+  tags = { Name = "${var.name_prefix}-public-${each.value.availability_zone}" }
 }
 
 resource "aws_subnet" "database" {
@@ -51,12 +62,12 @@ resource "aws_subnet" "database" {
   availability_zone = each.value.availability_zone
   cidr_block        = each.value.cidr_block
 
-  tags = { Name = "${local.name_prefix}-database-${each.value.availability_zone}" }
+  tags = { Name = "${var.name_prefix}-database-${each.value.availability_zone}" }
 }
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
-  tags   = { Name = "${local.name_prefix}-public" }
+  tags   = { Name = "${var.name_prefix}-public" }
 }
 
 resource "aws_route" "internet" {
@@ -72,8 +83,18 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# S3 traffic stays on the AWS network: no internet hop and no NAT to pay for.
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.public.id]
+
+  tags = { Name = "${var.name_prefix}-s3-endpoint" }
+}
+
 resource "aws_security_group" "alb" {
-  name        = "${local.name_prefix}-alb"
+  name        = "${var.name_prefix}-alb"
   description = "Public HTTP entry point"
   vpc_id      = aws_vpc.main.id
 
@@ -94,7 +115,7 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "frontend" {
-  name        = "${local.name_prefix}-frontend"
+  name        = "${var.name_prefix}-frontend"
   description = "Frontend tasks accept traffic only from the ALB"
   vpc_id      = aws_vpc.main.id
 
@@ -114,7 +135,7 @@ resource "aws_security_group" "frontend" {
 }
 
 resource "aws_security_group" "backend" {
-  name        = "${local.name_prefix}-backend"
+  name        = "${var.name_prefix}-backend"
   description = "Backend tasks accept traffic only from the ALB"
   vpc_id      = aws_vpc.main.id
 
@@ -134,7 +155,7 @@ resource "aws_security_group" "backend" {
 }
 
 resource "aws_security_group" "database" {
-  name        = "${local.name_prefix}-database"
+  name        = "${var.name_prefix}-database"
   description = "MariaDB accepts traffic only from backend tasks"
   vpc_id      = aws_vpc.main.id
 

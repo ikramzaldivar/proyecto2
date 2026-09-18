@@ -1,53 +1,84 @@
 # AWS infrastructure
 
-This directory adds the AWS PROD environment without replacing the evaluator's local environment.
+This directory holds the AWS environments. The local evaluator flow is
+unchanged: `docker compose up --build` still runs MariaDB and MinIO.
 
-- Local DEV remains Docker Compose with MariaDB and MinIO.
-- AWS PROD uses separate ECR repositories for the frontend and backend images.
-- The DVC PROD remote is a private, encrypted, versioned S3 bucket.
-- Approved releases use a separate private bucket with Governance Object Lock.
-- Terraform state is stored in a private, encrypted, versioned S3 backend with native locking.
-- ECS/Fargate runs the frontend and backend in independent tasks and services.
-- A public Application Load Balancer routes `/api/*` to the backend and all other paths to the frontend.
-- RDS MariaDB runs in private database subnets and manages its master password in Secrets Manager.
-- Backend connections to RDS require TLS and verify the endpoint with the AWS global RDS CA bundle.
-- Uploaded portal images use a dedicated private S3 bucket through the backend task role.
-- Fargate tasks use public subnets and public IPs for outbound ECR/S3 access, but their security groups accept inbound traffic only from the ALB. This avoids a NAT Gateway for this academic environment.
+## Layout
+
+```text
+modules/            Reusable building blocks. No environment values inside.
+  network/          VPC, subnets, routing, security groups, S3 gateway endpoint
+  storage/          Portal images, DVC remote and release buckets
+  registry/         ECR repositories with immutable tags
+  database/         RDS MariaDB in private subnets
+  service/          ALB, ECS cluster, task definitions, services and task roles
+envs/               One root per environment. This is where you run Terraform.
+  prod/             Applied. Also holds the account-wide resources
+  dev/              Defined, NOT applied. See the warning below
+```
+
+Modules never read `terraform.tfvars` or the backend: they receive everything
+through variables, so the same module builds PROD and DEV.
+
+Each environment has its own state under a different key in the same bucket, so
+a `plan` in DEV can never touch PROD.
+
+| | PROD | DEV |
+|---|---|---|
+| State key | `fargate/terraform.tfstate` | `dev/terraform.tfstate` |
+| VPC CIDR | `10.20.0.0/16` | `10.30.0.0/16` |
+| Name prefix | `proyecto2-prod-` | `proyecto2-dev-` |
+| Log retention | 7 days | 3 days |
+| Applied | yes | no |
+
+`envs/prod/account.tf` holds what belongs to the account rather than the
+environment: the Terraform state bucket and the cross-account administrator
+role. DEV reuses both. The file explains why they are not in a module.
+
+### DEV costs money
+
+`envs/dev` is committed but has never been applied. Running `apply` there
+creates its own RDS instance, ALB and two Fargate services — real monthly
+spend. Apply it only when someone has decided to pay for it.
 
 ## Authentication
 
-Use temporary AWS credentials. Do not store access keys, secrets or tokens in this repository.
+Use temporary AWS credentials. Do not store access keys, secrets or tokens in
+this repository.
 
 ```bash
 export AWS_PROFILE=proyecto2-terraform
 export AWS_REGION=us-east-2
 ```
 
-## Initialize the remote backend
+## Running an environment
+
+Always `cd` into the environment first. Running Terraform from this directory
+does nothing — there is no root module here.
 
 ```bash
+cd envs/prod
+
 terraform init \
   -backend-config=backend.hcl.example \
   -backend-config="profile=proyecto2-terraform"
 ```
 
-When migrating an existing local state, add `-migrate-state` and confirm that Terraform should copy the state to S3.
-
-## Validate before creating resources
-
-Create an ignored `terraform.tfvars` file with the immutable tag pushed to both ECR repositories:
+Create an ignored `terraform.tfvars` with the immutable tag pushed to both ECR
+repositories:
 
 ```hcl
 container_image_tag = "replace-with-git-sha"
 ```
 
 ```bash
-terraform fmt -check
+terraform fmt -check -recursive ../..
 terraform validate
 terraform plan -out=tfplan
 ```
 
-Review the plan and its recurring-cost resources before running `terraform apply tfplan`. Terraform state, variable and plan files are ignored by Git.
+Review the plan and its recurring-cost resources before `terraform apply tfplan`.
+State, variable and plan files are ignored by Git.
 
 After apply:
 
@@ -59,8 +90,30 @@ aws ecs describe-services \
   --region us-east-2
 ```
 
-The local evaluator flow remains unchanged:
+## The `moved` blocks
 
-```bash
-docker compose up --build
-```
+`envs/prod/moved.tf` maps every pre-refactor resource address to its new
+address inside a module. Terraform reads them during `plan`, so the state is
+rewritten in place instead of destroying and recreating the VPC, the database
+and the buckets.
+
+The first PROD plan after this refactor must show **0 to add, 0 to change, 0 to
+destroy**. If it shows anything else, stop and fix the mapping — do not apply.
+
+Once that plan has been applied, the file can be deleted in a separate PR.
+
+## What the design gets you
+
+- Only port 80 is reachable from the internet. The tasks and the database
+  accept traffic only from the security group in front of them.
+- ECR tags are immutable, so a rollback is always to a byte-identical image.
+- The RDS master password is generated and rotated by RDS in Secrets Manager
+  and never passes through Terraform or the state file.
+- Backend connections to RDS require TLS and verify the endpoint against the
+  AWS global RDS CA bundle.
+- S3 traffic leaves through a gateway endpoint, so it never crosses the public
+  internet and needs no NAT Gateway.
+- Approved dataset releases live in a bucket with Governance Object Lock.
+- Fargate tasks sit in public subnets with public IPs for outbound ECR and S3
+  access. That avoids a NAT Gateway, which is the right trade for an academic
+  environment; production-grade would use private subnets plus NAT.

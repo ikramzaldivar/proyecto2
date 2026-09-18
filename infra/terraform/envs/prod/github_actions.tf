@@ -1,3 +1,15 @@
+/**
+ * Keyless CI access for GitHub Actions, through OIDC.
+ *
+ * Account-wide, like the rest of account.tf: one OIDC provider and one CI role
+ * per account, not per environment. It also has to sit in the root because its
+ * least-privilege policy is scoped to the state bucket declared there.
+ *
+ * The write permission is deliberately narrow: only the `.tflock` object that
+ * S3 native locking creates, so `terraform plan` can take and release the lock
+ * without being able to touch the state itself.
+ */
+
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]

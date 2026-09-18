@@ -1,3 +1,12 @@
+/**
+ * Roles used by the ECS tasks.
+ *
+ * The execution role is what Fargate uses to pull the image and read the RDS
+ * secret; the task roles are what the application code uses at runtime. They
+ * are separate on purpose: the frontend never touches S3, so its task role
+ * carries no policy at all.
+ */
+
 data "aws_iam_policy_document" "ecs_tasks_assume_role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -9,7 +18,7 @@ data "aws_iam_policy_document" "ecs_tasks_assume_role" {
 }
 
 resource "aws_iam_role" "ecs_execution" {
-  name               = "${local.name_prefix}-ecs-execution"
+  name               = "${var.name_prefix}-ecs-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume_role.json
 }
 
@@ -26,18 +35,18 @@ resource "aws_iam_role_policy" "ecs_execution_secret" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["secretsmanager:GetSecretValue"]
-      Resource = aws_db_instance.app.master_user_secret[0].secret_arn
+      Resource = var.db_secret_arn
     }]
   })
 }
 
 resource "aws_iam_role" "frontend_task" {
-  name               = "${local.name_prefix}-frontend-task"
+  name               = "${var.name_prefix}-frontend-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume_role.json
 }
 
 resource "aws_iam_role" "backend_task" {
-  name               = "${local.name_prefix}-backend-task"
+  name               = "${var.name_prefix}-backend-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume_role.json
 }
 
@@ -50,12 +59,12 @@ resource "aws_iam_role_policy" "backend_images" {
       {
         Effect   = "Allow"
         Action   = ["s3:ListBucket"]
-        Resource = aws_s3_bucket.app_images.arn
+        Resource = var.app_images_bucket_arn
       },
       {
         Effect   = "Allow"
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-        Resource = "${aws_s3_bucket.app_images.arn}/*"
+        Resource = "${var.app_images_bucket_arn}/*"
       }
     ]
   })

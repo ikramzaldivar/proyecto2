@@ -13,39 +13,30 @@ variable "project_name" {
 variable "environment" {
   description = "Deployment environment."
   type        = string
-  default     = "prod"
+  default     = "dev"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block of the VPC. DEV uses its own range so both VPCs can coexist in the same account."
+  type        = string
+  default     = "10.30.0.0/16"
 }
 
 variable "ecr_image_retention_count" {
   description = "Maximum number of images retained in each ECR repository."
   type        = number
   default     = 10
-
-  validation {
-    condition     = var.ecr_image_retention_count >= 1
-    error_message = "ecr_image_retention_count must be at least 1."
-  }
 }
 
 variable "release_retention_days" {
   description = "Governance Object Lock retention for dataset releases."
   type        = number
   default     = 1
-
-  validation {
-    condition     = var.release_retention_days >= 1
-    error_message = "release_retention_days must be at least 1."
-  }
 }
 
 variable "container_image_tag" {
   description = "Immutable Git commit tag shared by the frontend and backend images."
   type        = string
-
-  validation {
-    condition     = length(trimspace(var.container_image_tag)) > 0 && var.container_image_tag != "latest"
-    error_message = "container_image_tag must be a non-empty immutable tag, not latest."
-  }
 }
 
 variable "allowed_http_cidrs" {
@@ -76,27 +67,10 @@ variable "service_desired_count" {
   description = "Desired task count for each ECS service."
   type        = number
   default     = 1
-
-  validation {
-    condition     = var.service_desired_count >= 1
-    error_message = "service_desired_count must be at least 1."
-  }
 }
 
 variable "log_retention_days" {
   description = "CloudWatch log retention for application containers."
   type        = number
-  default     = 7
-}
-
-variable "github_repository" {
-  description = "GitHub repository allowed to assume the CI role, as owner/name."
-  type        = string
-  default     = "ikramzaldivar/proyecto2"
-}
-
-variable "terraform_state_key" {
-  description = "Object key of the Terraform state in the backend bucket."
-  type        = string
-  default     = "fargate/terraform.tfstate"
+  default     = 3
 }

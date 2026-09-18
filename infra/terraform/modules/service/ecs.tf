@@ -1,5 +1,13 @@
+/**
+ * Fargate cluster, task definitions and services.
+ *
+ * Frontend and backend are independent services, each with its own image,
+ * security group and target group, so they can be scaled and deployed
+ * separately.
+ */
+
 resource "aws_ecs_cluster" "app" {
-  name = local.name_prefix
+  name = var.name_prefix
 
   setting {
     name  = "containerInsights"
@@ -10,12 +18,12 @@ resource "aws_ecs_cluster" "app" {
 resource "aws_cloudwatch_log_group" "app" {
   for_each = toset(["frontend", "backend"])
 
-  name              = "/ecs/${local.name_prefix}/${each.key}"
+  name              = "/ecs/${var.name_prefix}/${each.key}"
   retention_in_days = var.log_retention_days
 }
 
 resource "aws_ecs_task_definition" "frontend" {
-  family                   = "${local.name_prefix}-frontend"
+  family                   = "${var.name_prefix}-frontend"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
@@ -30,7 +38,7 @@ resource "aws_ecs_task_definition" "frontend" {
 
   container_definitions = jsonencode([{
     name      = "frontend"
-    image     = "${aws_ecr_repository.app["frontend"].repository_url}:${var.container_image_tag}"
+    image     = "${var.ecr_repository_urls["frontend"]}:${var.container_image_tag}"
     essential = true
     portMappings = [{
       containerPort = 80
@@ -49,7 +57,7 @@ resource "aws_ecs_task_definition" "frontend" {
 }
 
 resource "aws_ecs_task_definition" "backend" {
-  family                   = "${local.name_prefix}-backend"
+  family                   = "${var.name_prefix}-backend"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 512
@@ -64,7 +72,7 @@ resource "aws_ecs_task_definition" "backend" {
 
   container_definitions = jsonencode([{
     name      = "backend"
-    image     = "${aws_ecr_repository.app["backend"].repository_url}:${var.container_image_tag}"
+    image     = "${var.ecr_repository_urls["backend"]}:${var.container_image_tag}"
     essential = true
     portMappings = [{
       containerPort = 3100
@@ -74,19 +82,19 @@ resource "aws_ecs_task_definition" "backend" {
     environment = [
       { name = "NODE_ENV", value = "production" },
       { name = "PORT", value = "3100" },
-      { name = "DB_HOST", value = aws_db_instance.app.address },
-      { name = "DB_PORT", value = tostring(aws_db_instance.app.port) },
+      { name = "DB_HOST", value = var.db_host },
+      { name = "DB_PORT", value = tostring(var.db_port) },
       { name = "DB_USER", value = var.db_username },
       { name = "DB_NAME", value = var.db_name },
       { name = "DB_SSL", value = "true" },
       { name = "DB_SSL_CA_PATH", value = "/etc/ssl/certs/aws-rds-global-bundle.pem" },
       { name = "STORAGE_PROVIDER", value = "s3" },
       { name = "AWS_REGION", value = var.aws_region },
-      { name = "S3_BUCKET", value = aws_s3_bucket.app_images.bucket }
+      { name = "S3_BUCKET", value = var.app_images_bucket }
     ]
     secrets = [{
       name      = "DB_PASSWORD"
-      valueFrom = "${aws_db_instance.app.master_user_secret[0].secret_arn}:password::"
+      valueFrom = "${var.db_secret_arn}:password::"
     }]
     logConfiguration = {
       logDriver = "awslogs"
@@ -112,8 +120,8 @@ resource "aws_ecs_service" "frontend" {
   deployment_maximum_percent         = 200
 
   network_configuration {
-    subnets          = values(aws_subnet.public)[*].id
-    security_groups  = [aws_security_group.frontend.id]
+    subnets          = var.public_subnet_ids
+    security_groups  = [var.frontend_security_group_id]
     assign_public_ip = true
   }
 
@@ -139,8 +147,8 @@ resource "aws_ecs_service" "backend" {
   deployment_maximum_percent         = 200
 
   network_configuration {
-    subnets          = values(aws_subnet.public)[*].id
-    security_groups  = [aws_security_group.backend.id]
+    subnets          = var.public_subnet_ids
+    security_groups  = [var.backend_security_group_id]
     assign_public_ip = true
   }
 
