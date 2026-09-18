@@ -344,7 +344,12 @@ app.get('/export/coco', async (_req, res) => {
  * calidad (SPEC-QUALITY-API-007). Viven en su propio router para no mezclar
  * el portal de anotación (Fase 1) con las vistas de calidad (Proyecto 2).
  */
-app.use(createQualityRouter({ artifactsDir: env.QUALITY_ARTIFACTS_DIR }));
+app.use(
+  createQualityRouter({
+    artifactsDir: env.QUALITY_ARTIFACTS_DIR,
+    configPath: env.QUALITY_CONFIG_PATH,
+  }),
+);
 
 /**
  * Maneja errores generados por Multer.

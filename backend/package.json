@@ -35,6 +35,7 @@
     "multer": "^2.3.0",
     "mysql2": "^3.24.2",
     "sharp": "^0.35.4",
+    "yaml": "^2.9.1",
     "zod": "^4.5.4"
   },
   "devDependencies": {

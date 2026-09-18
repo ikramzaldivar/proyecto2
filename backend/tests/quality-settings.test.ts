@@ -74,7 +74,9 @@ describe('SPEC-QUALITY-API-008 — lectura de la política', () => {
 describe('SPEC-QUALITY-API-008 — persistencia', () => {
   it('escribe el cambio en el archivo y se vuelve a leer', async () => {
     const config = await getQualitySettings(configPath);
-    config.checks.small_objects = { ...config.checks.small_objects!, threshold: 48 };
+    const smallObjects = config.checks.small_objects;
+    if (!smallObjects) throw new Error('fixture sin small_objects');
+    config.checks.small_objects = { ...smallObjects, threshold: 48 };
 
     await updateQualitySettings(configPath, config);
 

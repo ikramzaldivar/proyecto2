@@ -58,6 +58,7 @@ export { deleteImage, uploadImage } from './image-upload.service.js';
 export type {
   AnalyzersBundle,
   CategoryRef,
+  CheckConfig,
   CheckResult,
   CheckStatus,
   ClassCountComparison,
@@ -65,16 +66,19 @@ export type {
   EmbeddingBundle,
   EmbeddingPoint,
   LeakageReport,
+  QualityConfig,
   QualityGate,
   ReannotationQueueItem,
   ReleaseBundle,
   Severity,
+  SplitConfig,
   SplitDistribution,
   VersionEntry,
   VersionsFile,
 } from './quality/contracts.js';
 export {
   parseEmbeddings,
+  parseQualityConfig,
   parseReleaseBundle,
   parseVersions,
 } from './quality/contracts.js';
@@ -101,6 +105,10 @@ export {
   getVersionDiff,
   getVersions,
 } from './quality/quality-artifacts.service.js';
+export {
+  getQualitySettings,
+  updateQualitySettings,
+} from './quality/quality-settings.service.js';
 // Parser de operadores de búsqueda (SPEC-SEARCH-001)
 export type { ParsedSearchQuery, SearchOperator } from './search-query.parser.js';
 export { parseSearchQuery } from './search-query.parser.js';

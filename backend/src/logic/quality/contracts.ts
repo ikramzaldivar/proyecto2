@@ -296,6 +296,63 @@ export const versionsFileSchema = z.object({
 export type VersionsFile = z.infer<typeof versionsFileSchema>;
 
 // ---------------------------------------------------------------------------
+// quality.yaml — política editable desde Settings (APP 05)
+// ---------------------------------------------------------------------------
+
+/** Los seis checks que la compuerta exige siempre (espejo de Frente 2). */
+export const REQUIRED_CHECK_NAMES = [
+  'min_images_per_class',
+  'small_objects',
+  'class_imbalance',
+  'duplicates',
+  'invalid_boxes',
+  'spatial_bias',
+] as const;
+
+export const checkConfigSchema = z.object({
+  threshold: z.number(),
+  severity: severitySchema,
+  min_classes: z.number().int().min(1).optional(),
+});
+export type CheckConfig = z.infer<typeof checkConfigSchema>;
+
+export const splitConfigSchema = z
+  .object({
+    train: z.number().gt(0).lt(1),
+    val: z.number().gt(0).lt(1),
+    test: z.number().gt(0).lt(1),
+    seed: z.number().int(),
+  })
+  .superRefine((value, context) => {
+    const total = value.train + value.val + value.test;
+    if (Math.abs(total - 1) > 1e-6) {
+      context.addIssue({
+        code: 'custom',
+        path: ['train'],
+        message: `train + val + test deben sumar 1.0 (suman ${total})`,
+      });
+    }
+  });
+export type SplitConfig = z.infer<typeof splitConfigSchema>;
+
+export const qualityConfigSchema = z
+  .object({
+    checks: z.record(z.string(), checkConfigSchema),
+    splits: splitConfigSchema,
+  })
+  .superRefine((value, context) => {
+    const missing = REQUIRED_CHECK_NAMES.filter((name) => !(name in value.checks));
+    if (missing.length > 0) {
+      context.addIssue({
+        code: 'custom',
+        path: ['checks'],
+        message: `Faltan checks obligatorios: ${missing.join(', ')}`,
+      });
+    }
+  });
+export type QualityConfig = z.infer<typeof qualityConfigSchema>;
+
+// ---------------------------------------------------------------------------
 // Parseo (lanza ZodError con la ruta del campo inválido)
 // ---------------------------------------------------------------------------
 
@@ -309,4 +366,8 @@ export function parseEmbeddings(raw: unknown): EmbeddingBundle {
 
 export function parseVersions(raw: unknown): VersionsFile {
   return versionsFileSchema.parse(raw);
+}
+
+export function parseQualityConfig(raw: unknown): QualityConfig {
+  return qualityConfigSchema.parse(raw);
 }

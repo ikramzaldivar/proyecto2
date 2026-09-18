@@ -1,4 +1,5 @@
 import { type Response, Router } from 'express';
+import { ZodError } from 'zod';
 import { NotFoundError } from '../logic/errors.js';
 import {
   getAnalyzers,
@@ -8,6 +9,10 @@ import {
   getVersionDiff,
   getVersions,
 } from '../logic/quality/quality-artifacts.service.js';
+import {
+  getQualitySettings,
+  updateQualitySettings,
+} from '../logic/quality/quality-settings.service.js';
 
 /**
  * SPEC-QUALITY-API-007 — Endpoints de solo lectura para el portal de calidad.
@@ -21,9 +26,11 @@ import {
 export interface QualityRouterOptions {
   /** Directorio donde el pipeline escribe release.json / versions.json. */
   artifactsDir: string;
+  /** Ruta a quality.yaml, que la pantalla Settings puede editar. */
+  configPath: string;
 }
 
-export function createQualityRouter({ artifactsDir }: QualityRouterOptions): Router {
+export function createQualityRouter({ artifactsDir, configPath }: QualityRouterOptions): Router {
   const router = Router();
 
   async function respond<T>(res: Response, producer: () => Promise<T>): Promise<void> {
@@ -65,6 +72,30 @@ export function createQualityRouter({ artifactsDir }: QualityRouterOptions): Rou
     }
 
     void respond(res, () => getVersionDiff(artifactsDir, from, to));
+  });
+
+  router.get('/quality/settings', (_req, res) =>
+    respond(res, () => getQualitySettings(configPath)),
+  );
+
+  router.put('/quality/settings', (req, res) => {
+    void (async () => {
+      try {
+        const updated = await updateQualitySettings(configPath, req.body);
+        res.status(200).json(updated);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res.status(400).json({
+            error: 'La política de calidad es inválida. Revisa umbrales y proporciones.',
+            issues: error.issues,
+          });
+          return;
+        }
+
+        console.error('Error al guardar la política de calidad:', error);
+        res.status(500).json({ error: 'No se pudo guardar la política de calidad.' });
+      }
+    })();
   });
 
   return router;
