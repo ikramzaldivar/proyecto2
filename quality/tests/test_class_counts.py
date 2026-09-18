@@ -57,9 +57,7 @@ def test_collapsing_a_duplicate_pair_reduces_the_after_count() -> None:
     # Imágenes 1 y 2 (ambas "car") son duplicados -> deben colapsar a 1
     # sola imagen representativa al contar "después".
     dataset = _build_dataset()
-    results = count_distinct_images_before_and_after_duplicates(
-        dataset, duplicate_groups=[[1, 2]]
-    )
+    results = count_distinct_images_before_and_after_duplicates(dataset, duplicate_groups=[[1, 2]])
     by_category = {r.category_id: r for r in results}
 
     assert by_category[CAR_ID].distinct_images_before == 5
