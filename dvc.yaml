@@ -1,0 +1,36 @@
+# Pipeline de calidad del dataset.
+#
+# Dos etapas a proposito: hash_images es la unica que toca las 690 imagenes una
+# por una (cara), asi que se cachea aparte. Cambiar un umbral en quality.yaml
+# vuelve a correr solo `analyze`; cambiar el dataset vuelve a correr las dos.
+#
+# PYTHONPATH=quality/src evita tener que instalar el paquete para reproducir
+# el pipeline: `dvc repro` funciona en limpio con solo las dependencias de
+# quality/pyproject.toml instaladas.
+
+stages:
+  hash_images:
+    cmd: PYTHONPATH=quality/src python pipeline/hash_images.py --images data/raw/images --out reports/image_hashes.json
+    deps:
+      - data/raw
+      - pipeline/hash_images.py
+      - quality/src/dataset_quality/adapters/phash.py
+    outs:
+      - reports/image_hashes.json
+
+  analyze:
+    cmd: PYTHONPATH=quality/src python pipeline/run_analyzers.py --coco data/annotations/coco-dataset.json --config quality/quality.yaml --hashes reports/image_hashes.json --out reports
+    deps:
+      - data/annotations/coco-dataset.json
+      - pipeline/run_analyzers.py
+      - quality/src/dataset_quality
+      - reports/image_hashes.json
+    params:
+      - quality/quality.yaml:
+          - checks
+          - splits
+    outs:
+      - reports/analyzers
+    metrics:
+      - reports/metrics.json:
+          cache: false
