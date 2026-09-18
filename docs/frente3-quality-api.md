@@ -45,6 +45,8 @@ calculadas en el frontend ni valores de ejemplo.
 | GET | `/quality/reannotation-queue` | Muestras FAIL con `annotation_id`, `image_id`, `reason`, `analyzer`, `severity` |
 | GET | `/quality/versions` | Timeline de versiones con estado DEV/PROD |
 | GET | `/quality/versions/diff?from=&to=` | Imágenes/cajas añadidas, Δ small objects, clases que entran/salen del mínimo |
+| GET | `/quality/settings` | `quality.yaml` como JSON (checks y splits) |
+| PUT | `/quality/settings` | Valida y **escribe** `quality.yaml`; 400 si la política es inválida |
 | GET | `/quality/embeddings` | Puntos PCA precomputados (APP 06) |
 
 ### Ejemplos
@@ -87,3 +89,87 @@ Frente 2.
 Los fixtures actuales representan el contrato acordado. Cuando Frente 2
 publique artefactos reales, basta con apuntar `QUALITY_ARTIFACTS_DIR` a su
 directorio de salida; los fixtures se conservan solo para pruebas.
+
+## 6. Vistas del portal (Story B)
+
+Las seis vistas viven bajo rutas propias y consumen el API anterior. Ninguna
+tiene cifras hardcodeadas: todas validan la respuesta con Zod y manejan
+carga / error / sin datos.
+
+| Ruta | Vista | Fuente |
+|---|---|---|
+| `/overview` | Resumen: totales, estado del gate y checks | `/quality/overview` |
+| `/analyzers` | 5 pestañas con gráficas y muestras navegables | `/quality/analyzers` |
+| `/splits` | Distribución por clase/split, fuga, seed y conteo antes/después | `/quality/splits` |
+| `/versions` | Timeline DEV/PROD y diff entre versiones | `/quality/versions` |
+| `/settings` | Edita y persiste `quality.yaml` | `/quality/settings` |
+| `/copilot` | Vista del Copilot (su backend MCP es la story COP 01-02) | contrato de calidad |
+
+## 7. Analítica exploratoria (APP 06)
+
+`GET /quality/embeddings` sirve las coordenadas 2D **precomputadas offline**
+(PCA). El portal **no** recalcula la reducción dimensional por request: pinta
+los puntos ya calculados, previsualiza la imagen en hover/focus y filtra por
+clase en el cliente.
+
+Contrato de `embeddings.json` (lo produce el pipeline de calidad):
+
+| Campo | Descripción |
+|---|---|
+| `method` | `pca` \| `tsne` \| `umap` |
+| `explained_variance` | Varianza explicada por los 2 componentes |
+| `points[]` | `image_id`, `file_name`, `x`, `y`, `category_ids`, `box_count` |
+
+Regeneración **reproducible y offline** (desde `backend/`):
+
+```bash
+npm run embeddings -- --coco <ruta-al-coco.json> --output <ruta-a-embeddings.json>
+# opcional, para una salida 100% determinista:
+#   ... --generated-at 2026-09-18T00:00:00Z
+```
+
+Es determinista: la misma entrada produce las mismas coordenadas, así que
+puede engancharse como una etapa de DVC junto al resto del pipeline.
+
+## 8. Dataset Copilot y servidor MCP (COP 01-02)
+
+El mismo registry de herramientas read-only alimenta al Copilot y al servidor
+MCP, así que las cifras del chat coinciden con las de las pantallas.
+
+| Herramienta | Devuelve |
+|---|---|
+| `get_dataset_overview` | Totales y estado de la compuerta |
+| `get_class_distribution` | Distribución y ratio de desbalance |
+| `get_small_objects` | Objetos pequeños + muestras |
+| `get_duplicates` | Pares y grupos duplicados |
+| `get_invalid_boxes` | Cajas inválidas con motivo |
+| `get_splits` | Particiones, seed y fuga |
+| `get_versions` | Versiones y estado DEV/PROD |
+| `compare_versions` | Diff entre dos versiones |
+| `get_reannotation_queue` | Cola de reanotación |
+
+Todas son de **solo lectura** y devuelven `datasetVersion` + archivo de
+procedencia.
+
+### Endpoints
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/copilot/tools` | Catálogo de herramientas (nombre, descripción, schema) |
+| POST | `/copilot/ask` | `{ answer, toolCalls[], datasetVersion, toolsUsed[], grounded, provider }` |
+
+### Servidor MCP (stdio)
+
+```bash
+npm run mcp              # backend/src/mcp/server.ts
+QUALITY_ARTIFACTS_DIR=... npm run mcp
+```
+
+Implementa `initialize`, `tools/list` y `tools/call` sobre JSON-RPC 2.0.
+
+### Proveedor de LLM
+
+`COPILOT_PROVIDER` = `none` | `anthropic` | `mistral`. Sin API key (o si el
+proveedor falla) el Copilot responde en **modo anclado**: una respuesta
+determinista construida solo con los resultados de las tools, sin inventar.
+La API key sale de variables de entorno y nunca se versiona.

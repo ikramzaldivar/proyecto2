@@ -136,6 +136,11 @@ describe('SPEC-QUALITY-API-005 — Versions', () => {
     expect(diff.smallObjectsPercentDelta).toBeCloseTo(-2.6, 5);
     expect(diff.classesThatLeftMinimum).toEqual([3]);
     expect(diff.classesThatEnteredMinimum).toEqual([]);
+    expect(diff.classCountChanges).toEqual([
+      { categoryId: 1, from: 1400, to: 1600, delta: 200 },
+      { categoryId: 2, from: 1300, to: 1500, delta: 200 },
+      { categoryId: 3, from: 320, to: 290, delta: -30 },
+    ]);
   });
 
   it('falla con un mensaje claro si la versión no existe', () => {

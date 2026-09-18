@@ -3,6 +3,13 @@ import { AnnotateScreen } from "@/components/annotate/AnnotateScreen";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { UploadScreen } from "@/components/upload/UploadScreen";
 import { DashboardPage } from "@/pages/Dashboard";
+import { AnalyticsPage } from "@/pages/quality/AnalyticsPage";
+import { AnalyzersPage } from "@/pages/quality/AnalyzersPage";
+import { CopilotPage } from "@/pages/quality/CopilotPage";
+import { OverviewPage } from "@/pages/quality/OverviewPage";
+import { SettingsPage } from "@/pages/quality/SettingsPage";
+import { SplitsPage } from "@/pages/quality/SplitsPage";
+import { VersionsPage } from "@/pages/quality/VersionsPage";
 import { SearchPage } from "@/pages/SearchPage";
 
 export function App(): JSX.Element {
@@ -26,6 +33,63 @@ export function App(): JSX.Element {
         element={
           <AppLayout>
             <UploadScreen />
+          </AppLayout>
+        }
+      />
+      {/* Seis vistas de calidad del Proyecto 2 (Frente 3). */}
+      <Route
+        path="/overview"
+        element={
+          <AppLayout>
+            <OverviewPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/analyzers"
+        element={
+          <AppLayout>
+            <AnalyzersPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <AppLayout>
+            <AnalyticsPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/splits"
+        element={
+          <AppLayout>
+            <SplitsPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/versions"
+        element={
+          <AppLayout>
+            <VersionsPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <AppLayout>
+            <SettingsPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/copilot"
+        element={
+          <AppLayout>
+            <CopilotPage />
           </AppLayout>
         }
       />

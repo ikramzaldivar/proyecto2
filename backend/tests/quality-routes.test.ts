@@ -13,12 +13,15 @@ const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtur
 let baseUrl: string;
 let closeServer: () => Promise<void>;
 
-async function listenWithArtifacts(artifactsDir: string): Promise<{
+async function listenWithArtifacts(
+  artifactsDir: string,
+  configPath: string,
+): Promise<{
   baseUrl: string;
   close: () => Promise<void>;
 }> {
   const app = express();
-  app.use(createQualityRouter({ artifactsDir }));
+  app.use(createQualityRouter({ artifactsDir, configPath }));
   const listener = app.listen(0);
   await once(listener, 'listening');
   const address = listener.address() as AddressInfo;
@@ -33,7 +36,7 @@ async function listenWithArtifacts(artifactsDir: string): Promise<{
 }
 
 beforeAll(async () => {
-  const instance = await listenWithArtifacts(FIXTURES);
+  const instance = await listenWithArtifacts(FIXTURES, path.join(FIXTURES, 'quality.yaml'));
   baseUrl = instance.baseUrl;
   closeServer = instance.close;
 });
@@ -126,7 +129,7 @@ describe('SPEC-QUALITY-API-007 — endpoints /quality', () => {
 
   it('GET /quality/overview sin artefactos responde 404 (estado "sin datos")', async () => {
     const emptyDir = await mkdtemp(path.join(tmpdir(), 'quality-empty-'));
-    const instance = await listenWithArtifacts(emptyDir);
+    const instance = await listenWithArtifacts(emptyDir, path.join(FIXTURES, 'quality.yaml'));
     try {
       const response = await fetch(`${instance.baseUrl}/quality/overview`);
       const body = (await response.json()) as { error: string };
@@ -137,5 +140,46 @@ describe('SPEC-QUALITY-API-007 — endpoints /quality', () => {
       await instance.close();
       await rm(emptyDir, { recursive: true, force: true });
     }
+  });
+
+  it('GET /quality/embeddings devuelve los puntos precomputados con categorías', async () => {
+    const response = await fetch(`${baseUrl}/quality/embeddings`);
+    const body = (await response.json()) as {
+      method: string;
+      points: unknown[];
+      categories: unknown[];
+      datasetVersion: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.method).toBe('pca');
+    expect(body.points.length).toBeGreaterThan(0);
+    expect(body.categories.length).toBeGreaterThan(0);
+    expect(body.datasetVersion).toBe('v1.0.0-demo');
+  });
+
+  it('GET /quality/settings devuelve la política de calidad', async () => {
+    const response = await fetch(`${baseUrl}/quality/settings`);
+    const body = (await response.json()) as {
+      checks: Record<string, { threshold: number; severity: string }>;
+      splits: { seed: number };
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.checks.min_images_per_class?.threshold).toBe(300);
+    expect(body.splits.seed).toBe(42);
+  });
+
+  it('PUT /quality/settings con una política inválida responde 400', async () => {
+    const response = await fetch(`${baseUrl}/quality/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        checks: {},
+        splits: { train: 0.9, val: 0.15, test: 0.15, seed: 42 },
+      }),
+    });
+
+    expect(response.status).toBe(400);
   });
 });

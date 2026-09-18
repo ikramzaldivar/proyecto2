@@ -61,6 +61,12 @@ const envSchema = z
 
     // Política de calidad que la pantalla Settings puede editar.
     QUALITY_CONFIG_PATH: z.string().min(1).default('../quality/quality.yaml'),
+
+    // Copilot: proveedor de LLM opcional. La API key nunca se versiona; si
+    // falta, el Copilot responde en modo anclado a las herramientas.
+    COPILOT_PROVIDER: z.enum(['none', 'anthropic', 'mistral']).default('none'),
+    COPILOT_API_KEY: z.string().min(1).optional(),
+    COPILOT_MODEL: z.string().min(1).optional(),
   })
   .superRefine((value, context) => {
     if (!value.DATABASE_URL) {

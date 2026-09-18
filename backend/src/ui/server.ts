@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { env } from '../config/env.js';
+import { buildProvider } from '../logic/copilot/provider.js';
 import {
   checkHealth,
   createAnnotationForImage,
@@ -21,6 +22,7 @@ import {
   uploadImage,
   ValidationError,
 } from '../logic/index.js';
+import { createCopilotRouter } from './copilot.routes.js';
 import { createQualityRouter } from './quality.routes.js';
 
 /**
@@ -344,7 +346,27 @@ app.get('/export/coco', async (_req, res) => {
  * calidad (SPEC-QUALITY-API-007). Viven en su propio router para no mezclar
  * el portal de anotación (Fase 1) con las vistas de calidad (Proyecto 2).
  */
-app.use(createQualityRouter({ artifactsDir: env.QUALITY_ARTIFACTS_DIR }));
+app.use(
+  createQualityRouter({
+    artifactsDir: env.QUALITY_ARTIFACTS_DIR,
+    configPath: env.QUALITY_CONFIG_PATH,
+  }),
+);
+
+/**
+ * Frente 3 — Dataset Copilot (SPEC-COPILOT-004): catálogo de herramientas y
+ * preguntas. El proveedor de LLM es opcional; sin API key responde anclado.
+ */
+app.use(
+  createCopilotRouter({
+    artifactsDir: env.QUALITY_ARTIFACTS_DIR,
+    provider: buildProvider({
+      provider: env.COPILOT_PROVIDER,
+      apiKey: env.COPILOT_API_KEY,
+      model: env.COPILOT_MODEL,
+    }),
+  }),
+);
 
 /**
  * Maneja errores generados por Multer.

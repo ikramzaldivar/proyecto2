@@ -5,6 +5,7 @@ import type {
   CheckResult,
   ClassCountComparison,
   DatasetTotals,
+  EmbeddingBundle,
   LeakageReport,
   ReleaseBundle,
   SplitDistribution,
@@ -69,7 +70,24 @@ export interface VersionDiff {
   invalidBoxesDelta: number;
   classesThatLeftMinimum: number[];
   classesThatEnteredMinimum: number[];
+  classCountChanges: ClassCountChange[];
   totals: { from: DatasetTotals; to: DatasetTotals };
+}
+
+export interface ClassCountChange {
+  categoryId: number;
+  from: number;
+  to: number;
+  delta: number;
+}
+
+export interface EmbeddingsView {
+  datasetVersion: string;
+  method: EmbeddingBundle['method'];
+  generatedAt: string;
+  explainedVariance: number[];
+  categories: CategoryRef[];
+  points: EmbeddingBundle['points'];
 }
 
 function summarizeGate(bundle: ReleaseBundle): GateSummary {
@@ -127,6 +145,25 @@ export function buildSplits(bundle: ReleaseBundle): SplitsView {
   };
 }
 
+/**
+ * Enriquiece las coordenadas precomputadas con la versión y los nombres de
+ * categoría del release, para que el frontend no tenga que hacer una segunda
+ * llamada solo para etiquetar los puntos.
+ */
+export function buildEmbeddingsView(
+  embeddings: EmbeddingBundle,
+  release: ReleaseBundle,
+): EmbeddingsView {
+  return {
+    datasetVersion: release.dataset_version,
+    method: embeddings.method,
+    generatedAt: embeddings.generated_at,
+    explainedVariance: embeddings.explained_variance,
+    categories: release.categories,
+    points: embeddings.points,
+  };
+}
+
 function findVersion(versions: VersionsFile, version: string): VersionEntry {
   const entry = versions.versions.find((candidate) => candidate.version === version);
   if (!entry) {
@@ -174,6 +211,13 @@ export function diffVersions(versions: VersionsFile, from: string, to: string): 
     invalidBoxesDelta: toEntry.metrics.invalidBoxes - fromEntry.metrics.invalidBoxes,
     classesThatLeftMinimum,
     classesThatEnteredMinimum,
+    classCountChanges: [...allCategoryIds]
+      .sort((a, b) => a - b)
+      .map((categoryId) => {
+        const before = fromCounts.get(categoryId) ?? 0;
+        const after = toCounts.get(categoryId) ?? 0;
+        return { categoryId, from: before, to: after, delta: after - before };
+      }),
     totals: { from: fromEntry.totals, to: toEntry.totals },
   };
 }

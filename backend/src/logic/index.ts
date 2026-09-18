@@ -30,6 +30,16 @@ export type {
 } from './coco-export.builder.js';
 export { buildCocoDataset } from './coco-export.builder.js';
 export { exportCocoDataset } from './coco-export.service.js';
+// Frente 3 — Dataset Copilot y MCP (SPEC-COPILOT-001..004)
+export type {
+  CopilotAnswer,
+  CopilotProvider,
+  CopilotToolCall,
+} from './copilot/copilot.service.js';
+export { askCopilot, selectToolsForQuestion } from './copilot/copilot.service.js';
+export { buildProvider } from './copilot/provider.js';
+export type { CopilotTool, ToolOutput } from './copilot/tools.js';
+export { buildQualityTools } from './copilot/tools.js';
 // Dashboard (SPEC-DASH-001)
 export type {
   AnnotationProgress,
@@ -58,6 +68,7 @@ export { deleteImage, uploadImage } from './image-upload.service.js';
 export type {
   AnalyzersBundle,
   CategoryRef,
+  CheckConfig,
   CheckResult,
   CheckStatus,
   ClassCountComparison,
@@ -65,22 +76,26 @@ export type {
   EmbeddingBundle,
   EmbeddingPoint,
   LeakageReport,
+  QualityConfig,
   QualityGate,
   ReannotationQueueItem,
   ReleaseBundle,
   Severity,
+  SplitConfig,
   SplitDistribution,
   VersionEntry,
   VersionsFile,
 } from './quality/contracts.js';
 export {
   parseEmbeddings,
+  parseQualityConfig,
   parseReleaseBundle,
   parseVersions,
 } from './quality/contracts.js';
 // Frente 3 — artefactos del pipeline de calidad (SPEC-QUALITY-API-001..007)
 export type {
   AnalyzersView,
+  EmbeddingsView,
   GateSummary,
   OverviewView,
   SplitsView,
@@ -88,6 +103,7 @@ export type {
 } from './quality/quality.service.js';
 export {
   buildAnalyzers,
+  buildEmbeddingsView,
   buildOverview,
   buildSplits,
   diffVersions,
@@ -101,6 +117,10 @@ export {
   getVersionDiff,
   getVersions,
 } from './quality/quality-artifacts.service.js';
+export {
+  getQualitySettings,
+  updateQualitySettings,
+} from './quality/quality-settings.service.js';
 // Parser de operadores de búsqueda (SPEC-SEARCH-001)
 export type { ParsedSearchQuery, SearchOperator } from './search-query.parser.js';
 export { parseSearchQuery } from './search-query.parser.js';
