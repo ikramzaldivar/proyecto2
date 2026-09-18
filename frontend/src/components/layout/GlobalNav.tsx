@@ -5,6 +5,7 @@ import {
   History,
   LayoutDashboard,
   PieChart,
+  ScatterChart,
   Search,
   Settings,
   Upload,
@@ -28,6 +29,7 @@ const PORTAL_ITEMS: NavItem[] = [
 const QUALITY_ITEMS: NavItem[] = [
   { label: "Resumen", to: "/overview", icon: Activity },
   { label: "Analizadores", to: "/analyzers", icon: BarChart3 },
+  { label: "Analítica", to: "/analytics", icon: ScatterChart },
   { label: "Particiones", to: "/splits", icon: PieChart },
   { label: "Versiones", to: "/versions", icon: History },
   { label: "Copilot", to: "/copilot", icon: Bot },

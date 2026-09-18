@@ -339,3 +339,31 @@ export function updateQualitySettings(settings: QualitySettings): Promise<Qualit
 export function fetchReannotationQueue(): Promise<ReannotationItem[]> {
   return apiRequest("/quality/reannotation-queue", z.array(reannotationItemSchema));
 }
+
+// ---------------------------------------------------------------------------
+// Analítica exploratoria (APP 06)
+// ---------------------------------------------------------------------------
+
+export const embeddingPointSchema = z.object({
+  image_id: z.number(),
+  file_name: z.string(),
+  x: z.number(),
+  y: z.number(),
+  category_ids: z.array(z.number()),
+  box_count: z.number(),
+});
+export type EmbeddingPoint = z.infer<typeof embeddingPointSchema>;
+
+export const embeddingsViewSchema = z.object({
+  datasetVersion: z.string(),
+  method: z.enum(["pca", "tsne", "umap"]),
+  generatedAt: z.string(),
+  explainedVariance: z.array(z.number()),
+  categories: z.array(categoryRefSchema),
+  points: z.array(embeddingPointSchema),
+});
+export type EmbeddingsView = z.infer<typeof embeddingsViewSchema>;
+
+export function fetchEmbeddings(): Promise<EmbeddingsView> {
+  return apiRequest("/quality/embeddings", embeddingsViewSchema);
+}

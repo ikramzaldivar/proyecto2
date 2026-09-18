@@ -3,6 +3,7 @@ import { AnnotateScreen } from "@/components/annotate/AnnotateScreen";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { UploadScreen } from "@/components/upload/UploadScreen";
 import { DashboardPage } from "@/pages/Dashboard";
+import { AnalyticsPage } from "@/pages/quality/AnalyticsPage";
 import { AnalyzersPage } from "@/pages/quality/AnalyzersPage";
 import { CopilotPage } from "@/pages/quality/CopilotPage";
 import { OverviewPage } from "@/pages/quality/OverviewPage";
@@ -49,6 +50,14 @@ export function App(): JSX.Element {
         element={
           <AppLayout>
             <AnalyzersPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <AppLayout>
+            <AnalyticsPage />
           </AppLayout>
         }
       />

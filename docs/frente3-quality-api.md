@@ -104,3 +104,22 @@ carga / error / sin datos.
 | `/versions` | Timeline DEV/PROD y diff entre versiones | `/quality/versions` |
 | `/settings` | Edita y persiste `quality.yaml` | `/quality/settings` |
 | `/copilot` | Vista del Copilot (su backend MCP es la story COP 01-02) | contrato de calidad |
+
+## 7. Analítica exploratoria (APP 06)
+
+`GET /quality/embeddings` sirve las coordenadas 2D **precomputadas offline**
+(PCA). El portal **no** recalcula la reducción dimensional por request: pinta
+los puntos ya calculados, previsualiza la imagen en hover/focus y filtra por
+clase en el cliente.
+
+Contrato de `embeddings.json` (lo produce el pipeline de calidad):
+
+| Campo | Descripción |
+|---|---|
+| `method` | `pca` \| `tsne` \| `umap` |
+| `explained_variance` | Varianza explicada por los 2 componentes |
+| `points[]` | `image_id`, `file_name`, `x`, `y`, `category_ids`, `box_count` |
+
+Regeneración: la precomputación corresponde al pipeline de calidad (Frente 2).
+Hoy `main` **no** emite `embeddings.json`, así que el portal usa un fixture
+tipado; el paso pendiente está listado en `docs/frente3-pendientes.md`.
