@@ -1,0 +1,6 @@
+# Add patterns of files dvc should ignore, which could improve
+# the performance. Learn more at
+# https://dvc.org/doc/user-guide/dvcignore
+
+# macOS crea este archivo al abrir carpetas en Finder y altera el hash del dataset.
+.DS_Store
