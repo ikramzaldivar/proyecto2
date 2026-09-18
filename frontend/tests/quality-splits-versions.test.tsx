@@ -168,9 +168,10 @@ describe('SPEC-QUALITY-UI-004 — Splits', () => {
     );
 
     const counts = within(screen.getByTestId('splits-class-counts'));
-    expect(counts.getByText('person')).toBeInTheDocument();
-    expect(counts.getByText('6')).toBeInTheDocument();
-    expect(counts.getByText('5')).toBeInTheDocument();
+    const personRow = counts.getByTestId('class-count-1');
+    expect(personRow).toHaveTextContent('person');
+    expect(personRow).toHaveTextContent('6');
+    expect(personRow).toHaveTextContent('5');
   });
 });
 
@@ -200,7 +201,7 @@ describe('SPEC-QUALITY-UI-005 — Versions', () => {
     );
 
     const diff = within(screen.getByTestId('version-diff'));
-    expect(diff.getByText('370')).toBeInTheDocument();
+    expect(diff.getByText(/370/)).toBeInTheDocument();
     expect(diff.getByText(/dog|#3/)).toBeInTheDocument();
   });
 });

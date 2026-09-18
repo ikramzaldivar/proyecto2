@@ -5,6 +5,8 @@ import { UploadScreen } from "@/components/upload/UploadScreen";
 import { DashboardPage } from "@/pages/Dashboard";
 import { AnalyzersPage } from "@/pages/quality/AnalyzersPage";
 import { OverviewPage } from "@/pages/quality/OverviewPage";
+import { SplitsPage } from "@/pages/quality/SplitsPage";
+import { VersionsPage } from "@/pages/quality/VersionsPage";
 import { SearchPage } from "@/pages/SearchPage";
 
 export function App(): JSX.Element {
@@ -45,6 +47,22 @@ export function App(): JSX.Element {
         element={
           <AppLayout>
             <AnalyzersPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/splits"
+        element={
+          <AppLayout>
+            <SplitsPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/versions"
+        element={
+          <AppLayout>
+            <VersionsPage />
           </AppLayout>
         }
       />
