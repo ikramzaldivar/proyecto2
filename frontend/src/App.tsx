@@ -4,7 +4,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { UploadScreen } from "@/components/upload/UploadScreen";
 import { DashboardPage } from "@/pages/Dashboard";
 import { AnalyzersPage } from "@/pages/quality/AnalyzersPage";
+import { CopilotPage } from "@/pages/quality/CopilotPage";
 import { OverviewPage } from "@/pages/quality/OverviewPage";
+import { SettingsPage } from "@/pages/quality/SettingsPage";
 import { SplitsPage } from "@/pages/quality/SplitsPage";
 import { VersionsPage } from "@/pages/quality/VersionsPage";
 import { SearchPage } from "@/pages/SearchPage";
@@ -63,6 +65,22 @@ export function App(): JSX.Element {
         element={
           <AppLayout>
             <VersionsPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <AppLayout>
+            <SettingsPage />
+          </AppLayout>
+        }
+      />
+      <Route
+        path="/copilot"
+        element={
+          <AppLayout>
+            <CopilotPage />
           </AppLayout>
         }
       />
