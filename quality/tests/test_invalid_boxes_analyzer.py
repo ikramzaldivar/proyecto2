@@ -10,6 +10,7 @@ NEGATIVE_COORDS_ID = 2
 OUT_OF_BOUNDS_ID = 3
 ZERO_SIZE_ID = 4
 AREA_MISMATCH_ID = 5
+NEGATIVE_WIDTH_ID = 6
 
 
 def _annotation(annotation_id: int, bbox: list[float], area: float) -> dict:
@@ -36,6 +37,9 @@ def _build_dataset() -> CocoDataset:
                 _annotation(OUT_OF_BOUNDS_ID, [90, 90, 20, 20], 400),
                 _annotation(ZERO_SIZE_ID, [10, 10, 0, 20], 0),
                 _annotation(AREA_MISMATCH_ID, [10, 10, 20, 20], 999),
+                # El prompt pide explícitamente ancho NEGATIVO, distinto de
+                # ancho cero (ZERO_SIZE_ID ya cubre el caso de cero).
+                _annotation(NEGATIVE_WIDTH_ID, [10, 10, -5, 20], 400),
             ],
         }
     )
@@ -71,7 +75,15 @@ def test_flags_area_mismatch_with_the_right_reason() -> None:
     assert "area_mismatch" in box.reasons
 
 
+def test_flags_negative_width_with_the_right_reason() -> None:
+    # Caso pedido explícitamente por el prompt: ancho negativo, distinto
+    # del caso de ancho cero (test_flags_zero_size_box_with_the_right_reason).
+    report = analyze_invalid_boxes(_build_dataset(), CheckConfig(threshold=0, severity="fail"))
+    box = next(b for b in report.invalid_boxes if b.annotation_id == NEGATIVE_WIDTH_ID)
+    assert "zero_or_negative_size" in box.reasons
+
+
 def test_reports_total_and_invalid_counts() -> None:
     report = analyze_invalid_boxes(_build_dataset(), CheckConfig(threshold=0, severity="fail"))
-    assert report.total_annotations == 5
-    assert report.invalid_count == 4  # todas menos VALID_ID
+    assert report.total_annotations == 6
+    assert report.invalid_count == 5  # todas menos VALID_ID
