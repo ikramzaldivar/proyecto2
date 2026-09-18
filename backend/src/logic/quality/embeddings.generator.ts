@@ -201,11 +201,15 @@ export function computeEmbeddings(
     });
     const centered = rows.map((row) => row.map((value, index) => value - (means[index] ?? 0)));
 
-    const { vectors, values } = principalComponents(covariance(centered), 2);
+    const covarianceMatrix = covariance(centered);
+    const { vectors, values } = principalComponents(covarianceMatrix, 2);
     scores = centered.map((row) => vectors.map((vector) => dot(row, vector)));
 
-    const total = values.reduce((acc, value) => acc + value, 0);
-    explainedVariance = total > 0 ? values.map((value) => value / total) : [0, 0];
+    // La varianza explicada es la fracción de la varianza TOTAL (la traza de la
+    // covarianza), no de la suma de los dos componentes retenidos: con esto
+    // último los dos siempre sumarían 100% aunque dejaran varianza sin explicar.
+    const totalVariance = covarianceMatrix.reduce((acc, row, i) => acc + (row[i] ?? 0), 0);
+    explainedVariance = totalVariance > 0 ? values.map((value) => value / totalVariance) : [0, 0];
 
     // Normaliza a [-1, 1] para que el frontend no tenga que adivinar la escala.
     const maxAbs = Math.max(0, ...scores.flat().map((value) => Math.abs(value)));
