@@ -55,6 +55,12 @@ const envSchema = z
       .int()
       .positive()
       .default(5 * 1024 * 1024),
+
+    // Artefactos del pipeline de calidad (Frente 3). El portal solo los lee.
+    QUALITY_ARTIFACTS_DIR: z.string().min(1).default('../quality/output'),
+
+    // Política de calidad que la pantalla Settings puede editar.
+    QUALITY_CONFIG_PATH: z.string().min(1).default('../quality/quality.yaml'),
   })
   .superRefine((value, context) => {
     if (!value.DATABASE_URL) {

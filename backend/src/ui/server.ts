@@ -21,6 +21,7 @@ import {
   uploadImage,
   ValidationError,
 } from '../logic/index.js';
+import { createQualityRouter } from './quality.routes.js';
 
 /**
  * SPEC-VALID-001 — Valida un route param de id (`:imageId`, `:annotationId`)
@@ -337,6 +338,13 @@ app.get('/export/coco', async (_req, res) => {
     sendError(res, error, 'Error al exportar el dataset.');
   }
 });
+
+/**
+ * Frente 3 — endpoints de solo lectura sobre los artefactos del pipeline de
+ * calidad (SPEC-QUALITY-API-007). Viven en su propio router para no mezclar
+ * el portal de anotación (Fase 1) con las vistas de calidad (Proyecto 2).
+ */
+app.use(createQualityRouter({ artifactsDir: env.QUALITY_ARTIFACTS_DIR }));
 
 /**
  * Maneja errores generados por Multer.
