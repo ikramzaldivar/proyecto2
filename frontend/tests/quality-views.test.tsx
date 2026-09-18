@@ -111,6 +111,24 @@ describe('SPEC-QUALITY-UI-002 — Overview con datos reales', () => {
     expect(screen.getByText(/invalid_boxes/)).toBeInTheDocument();
   });
 
+  it('muestra WARN cuando no hay fallos pero sí warnings', () => {
+    mocks.overview = {
+      status: 'success',
+      data: {
+        ...OVERVIEW_FIXTURE,
+        gate: { overallStatus: 'pass', exitCode: 0, passCount: 5, warnCount: 1, failCount: 0 },
+      },
+    };
+
+    render(
+      <MemoryRouter>
+        <OverviewPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('gate-status')).toHaveTextContent('WARN');
+  });
+
   it('muestra un estado vacío explícito cuando no hay artefactos', () => {
     mocks.overview = {
       status: 'empty',

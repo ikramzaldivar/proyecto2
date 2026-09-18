@@ -156,6 +156,25 @@ describe('SPEC-QUALITY-UI-003 — Analyzers', () => {
     );
   });
 
+  it('muestra umbral y severidad en las cinco pestañas', () => {
+    mocks.analyzers = { status: 'success', data: ANALYZERS_FIXTURE };
+    renderPage();
+
+    const tabs = [
+      /objetos peque/i,
+      /desbalance/i,
+      /duplicados/i,
+      /cajas inv/i,
+      /sesgo espacial/i,
+    ];
+
+    for (const tab of tabs) {
+      fireEvent.click(screen.getByRole('tab', { name: tab }));
+      expect(screen.getByText(/umbral/i)).toBeInTheDocument();
+      expect(screen.getByText(/severidad/i)).toBeInTheDocument();
+    }
+  });
+
   it('muestra estado vacío explícito sin artefactos', () => {
     mocks.analyzers = { status: 'empty', message: 'No hay release.json.' };
     renderPage();

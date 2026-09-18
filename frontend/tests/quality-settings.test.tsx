@@ -74,6 +74,16 @@ describe('SPEC-QUALITY-UI-006 — Settings', () => {
     );
   });
 
+  it('señala el comando para volver a ejecutar el Quality Gate', () => {
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/dataset_quality\.cli/)).toBeInTheDocument();
+  });
+
   it('rechaza proporciones que no suman 1 sin llamar al API', async () => {
     render(
       <MemoryRouter>
