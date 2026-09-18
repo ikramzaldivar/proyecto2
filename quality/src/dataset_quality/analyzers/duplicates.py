@@ -7,6 +7,7 @@ class DuplicatePair(BaseModel):
     image_id_a: int
     image_id_b: int
     distance: int
+    similarity_percent: float
 
 
 class DuplicatesReport(BaseModel):
@@ -60,7 +61,17 @@ def analyze_duplicates(image_hashes: dict[int, str], config: CheckConfig) -> Dup
             id_a, id_b = image_ids[i], image_ids[j]
             distance = _hamming_distance(image_hashes[id_a], image_hashes[id_b])
             if distance <= config.threshold:
-                pairs.append(DuplicatePair(image_id_a=id_a, image_id_b=id_b, distance=distance))
+                # Cada carácter hex representa 4 bits -> total de bits del hash.
+                total_bits = len(image_hashes[id_a]) * 4
+                similarity_percent = (1 - distance / total_bits) * 100 if total_bits else 0.0
+                pairs.append(
+                    DuplicatePair(
+                        image_id_a=id_a,
+                        image_id_b=id_b,
+                        distance=distance,
+                        similarity_percent=similarity_percent,
+                    )
+                )
 
     return DuplicatesReport(
         threshold=config.threshold,

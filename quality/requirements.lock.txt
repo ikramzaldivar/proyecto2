@@ -6,10 +6,21 @@
 #
 annotated-types==0.8.0
     # via pydantic
+imagehash==4.3.2
+    # via dataset-quality (pyproject.toml)
 iniconfig==2.3.0
     # via pytest
+numpy==2.5.3
+    # via
+    #   imagehash
+    #   pywavelets
+    #   scipy
 packaging==26.3
     # via pytest
+pillow==12.3.0
+    # via
+    #   dataset-quality (pyproject.toml)
+    #   imagehash
 pluggy==1.6.0
     # via pytest
 pydantic==2.13.5
@@ -26,10 +37,14 @@ pytest==9.1.1
     # via dataset-quality (pyproject.toml)
 python-dotenv==1.2.3
     # via pydantic-settings
+pywavelets==1.10.0
+    # via imagehash
 pyyaml==6.0.3
     # via dataset-quality (pyproject.toml)
 ruff==0.16.8
     # via dataset-quality (pyproject.toml)
+scipy==1.18.1
+    # via imagehash
 typing-extensions==4.16.0
     # via
     #   pydantic
