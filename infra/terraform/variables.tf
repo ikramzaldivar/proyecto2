@@ -88,3 +88,9 @@ variable "log_retention_days" {
   type        = number
   default     = 7
 }
+
+variable "github_repository" {
+  description = "GitHub repository allowed to assume the CI role, as owner/name."
+  type        = string
+  default     = "ikramzaldivar/proyecto2"
+}
