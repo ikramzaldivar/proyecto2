@@ -19,7 +19,7 @@ class CheckResult(BaseModel):
     status: CheckStatus
     severity: Severity
     threshold: float
-    observed: float
+    observed: dict
     samples: list[dict]
 
 
@@ -44,18 +44,29 @@ def evaluate_quality_gate(
     """Función pura (CAL 00): convierte los 5 reportes de analizadores +
     quality.yaml en una decisión reproducible PASS/WARN/FAIL, con exit code.
 
-    Supuestos sobre qué DISPARA cada check (documentados aquí porque
-    quality.yaml no define un "% máximo aceptable" distinto del umbral que
-    cada analizador ya usa internamente — si la intención real es otra,
-    ajustar aquí es un cambio acotado a esta función):
+    Reglas confirmadas por el PM (no reinterpretar el threshold de cada
+    check con otro significado que el que ya tiene en su analizador):
 
-    - min_images_per_class: dispara si MENOS de min_classes categorías
-      alcanzan el threshold de imágenes distintas.
-    - invalid_boxes: dispara si hay AL MENOS 1 caja inválida.
-    - class_imbalance: dispara si el ratio mayoría/minoría excede threshold.
-    - duplicates: dispara si se encontró AL MENOS 1 grupo de duplicados.
-    - small_objects y spatial_bias: informativos por ahora (nunca
-      bloquean el release) — solo se reportan sus valores observados.
+    - min_images_per_class: viola si MENOS de min_classes categorías
+      alcanzan threshold imágenes distintas.
+    - invalid_boxes: viola si existe AL MENOS 1 caja inválida. severity
+      decide si eso es warn o fail.
+    - class_imbalance: viola si el ratio mayoría/minoría es ESTRICTAMENTE
+      MAYOR al threshold.
+    - duplicates: viola si existe AL MENOS 1 grupo de duplicados. El
+      threshold de este check sigue siendo la distancia pHash usada por el
+      analizador para decidir qué es "duplicado" — NUNCA se reutiliza aquí
+      como cantidad máxima de grupos permitidos.
+    - small_objects: NO bloqueante (severity: warn fijo en quality.yaml).
+      Su threshold es el tamaño en px para considerar un objeto "pequeño",
+      NO un porcentaje máximo — no se reutiliza como tal. Reporta
+      small_percent, resultados por categoría y muestras.
+    - spatial_bias: NO bloqueante. Reporta todas sus estadísticas
+      (global y por categoría), sin un umbral de "demasiado sesgo" todavía.
+
+    El exit code es distinto de cero únicamente si algún check violado
+    tiene severity "fail" — los "warn" aparecen en el reporte pero nunca
+    bloquean el release.
     """
     checks: list[CheckResult] = []
 
@@ -72,7 +83,10 @@ def evaluate_quality_gate(
             status=_status_for(classes_meeting_threshold < min_classes, min_config.severity),
             severity=min_config.severity,
             threshold=min_config.threshold,
-            observed=classes_meeting_threshold,
+            observed={
+                "classes_meeting_threshold": classes_meeting_threshold,
+                "min_classes_required": min_classes,
+            },
             samples=[],
         )
     )
@@ -84,7 +98,10 @@ def evaluate_quality_gate(
             status=_status_for(invalid_boxes.invalid_count > 0, invalid_config.severity),
             severity=invalid_config.severity,
             threshold=invalid_config.threshold,
-            observed=invalid_boxes.invalid_count,
+            observed={
+                "invalid_count": invalid_boxes.invalid_count,
+                "total_annotations": invalid_boxes.total_annotations,
+            },
             samples=[box.model_dump() for box in invalid_boxes.invalid_boxes[:MAX_SAMPLES]],
         )
     )
@@ -97,7 +114,11 @@ def evaluate_quality_gate(
             status=_status_for(ratio > imbalance_config.threshold, imbalance_config.severity),
             severity=imbalance_config.severity,
             threshold=imbalance_config.threshold,
-            observed=ratio,
+            observed={
+                "ratio": ratio,
+                "majority_category_id": class_imbalance.majority_category_id,
+                "minority_category_id": class_imbalance.minority_category_id,
+            },
             samples=[],
         )
     )
@@ -109,7 +130,10 @@ def evaluate_quality_gate(
             status=_status_for(len(duplicates.duplicate_groups) > 0, duplicates_config.severity),
             severity=duplicates_config.severity,
             threshold=duplicates_config.threshold,
-            observed=len(duplicates.duplicate_groups),
+            observed={
+                "group_count": len(duplicates.duplicate_groups),
+                "pair_count": len(duplicates.pairs),
+            },
             samples=[pair.model_dump() for pair in duplicates.pairs[:MAX_SAMPLES]],
         )
     )
@@ -121,7 +145,11 @@ def evaluate_quality_gate(
             status="pass",
             severity=small_config.severity,
             threshold=small_config.threshold,
-            observed=small_objects.small_percent,
+            observed={
+                "small_percent": small_objects.small_percent,
+                "percent_by_category": small_objects.percent_by_category,
+                "most_affected_category_id": small_objects.most_affected_category_id,
+            },
             samples=[
                 sample.model_dump() for sample in small_objects.offending_samples[:MAX_SAMPLES]
             ],
@@ -135,7 +163,13 @@ def evaluate_quality_gate(
             status="pass",
             severity=spatial_config.severity,
             threshold=spatial_config.threshold,
-            observed=spatial_bias.global_stats.std_x,
+            observed={
+                "global_stats": spatial_bias.global_stats.model_dump(),
+                "stats_by_category": {
+                    str(category_id): stats.model_dump()
+                    for category_id, stats in spatial_bias.stats_by_category.items()
+                },
+            },
             samples=[],
         )
     )
