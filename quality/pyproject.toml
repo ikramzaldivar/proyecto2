@@ -11,6 +11,9 @@ dependencies = [
     "imagehash>=4.3",
 ]
 
+[project.scripts]
+quality-gate = "dataset_quality.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "ruff>=0.6",
