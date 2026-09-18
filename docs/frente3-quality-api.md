@@ -130,3 +130,46 @@ npm run embeddings -- --coco <ruta-al-coco.json> --output <ruta-a-embeddings.jso
 
 Es determinista: la misma entrada produce las mismas coordenadas, así que
 puede engancharse como una etapa de DVC junto al resto del pipeline.
+
+## 8. Dataset Copilot y servidor MCP (COP 01-02)
+
+El mismo registry de herramientas read-only alimenta al Copilot y al servidor
+MCP, así que las cifras del chat coinciden con las de las pantallas.
+
+| Herramienta | Devuelve |
+|---|---|
+| `get_dataset_overview` | Totales y estado de la compuerta |
+| `get_class_distribution` | Distribución y ratio de desbalance |
+| `get_small_objects` | Objetos pequeños + muestras |
+| `get_duplicates` | Pares y grupos duplicados |
+| `get_invalid_boxes` | Cajas inválidas con motivo |
+| `get_splits` | Particiones, seed y fuga |
+| `get_versions` | Versiones y estado DEV/PROD |
+| `compare_versions` | Diff entre dos versiones |
+| `get_reannotation_queue` | Cola de reanotación |
+
+Todas son de **solo lectura** y devuelven `datasetVersion` + archivo de
+procedencia.
+
+### Endpoints
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/copilot/tools` | Catálogo de herramientas (nombre, descripción, schema) |
+| POST | `/copilot/ask` | `{ answer, toolCalls[], datasetVersion, toolsUsed[], grounded, provider }` |
+
+### Servidor MCP (stdio)
+
+```bash
+npm run mcp              # backend/src/mcp/server.ts
+QUALITY_ARTIFACTS_DIR=... npm run mcp
+```
+
+Implementa `initialize`, `tools/list` y `tools/call` sobre JSON-RPC 2.0.
+
+### Proveedor de LLM
+
+`COPILOT_PROVIDER` = `none` | `anthropic` | `mistral`. Sin API key (o si el
+proveedor falla) el Copilot responde en **modo anclado**: una respuesta
+determinista construida solo con los resultados de las tools, sin inventar.
+La API key sale de variables de entorno y nunca se versiona.
