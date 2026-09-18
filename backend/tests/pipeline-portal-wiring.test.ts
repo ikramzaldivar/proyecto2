@@ -17,12 +17,23 @@ import {
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(backendDir, '..');
 
-function readYaml(relativePath: string): Record<string, any> {
-  return parse(readFileSync(path.join(repoRoot, relativePath), 'utf-8')) as Record<string, any>;
+interface DvcFile {
+  stages: Record<
+    string,
+    { outs?: Array<string | Record<string, unknown>>; params?: Array<Record<string, unknown>> }
+  >;
+}
+
+interface ComposeFile {
+  services: Record<string, { environment: Record<string, string>; volumes?: string[] }>;
+}
+
+function readYaml<T>(relativePath: string): T {
+  return parse(readFileSync(path.join(repoRoot, relativePath), 'utf-8')) as T;
 }
 
 function outputDirOf(stage: string, artifact: string): string {
-  const outs = readYaml('dvc.yaml').stages[stage].outs as Array<string | Record<string, unknown>>;
+  const outs = readYaml<DvcFile>('dvc.yaml').stages[stage]?.outs ?? [];
   const paths = outs.map((out) => (typeof out === 'string' ? out : Object.keys(out)[0]));
   const found = paths.find((candidate) => candidate?.endsWith(artifact));
   if (!found) throw new Error(`La etapa ${stage} de dvc.yaml no declara ${artifact} en outs.`);
@@ -62,7 +73,7 @@ describe('el directorio de artefactos del portal coincide con el que escribe el 
 
 describe('la política que edita Settings es la misma que lee el pipeline', () => {
   it('la ruta por defecto apunta al quality.yaml que declara dvc.yaml como params', () => {
-    const paramsFiles = (readYaml('dvc.yaml').stages.analyze.params as Array<object>).flatMap(
+    const paramsFiles = (readYaml<DvcFile>('dvc.yaml').stages.analyze?.params ?? []).flatMap(
       (entry) => Object.keys(entry),
     );
 
@@ -74,9 +85,8 @@ describe('la política que edita Settings es la misma que lee el pipeline', () =
 });
 
 describe('docker-compose monta los artefactos y la política dentro del backend', () => {
-  const backend = readYaml('docker-compose.yml').services.backend as {
-    environment: Record<string, string>;
-    volumes?: string[];
+  const backend = readYaml<ComposeFile>('docker-compose.yml').services.backend ?? {
+    environment: {},
   };
   const volumes = backend.volumes ?? [];
 

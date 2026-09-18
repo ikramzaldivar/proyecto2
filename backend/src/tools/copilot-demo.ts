@@ -1,4 +1,5 @@
 import { pathToFileURL } from 'node:url';
+import { DEFAULT_QUALITY_ARTIFACTS_DIR } from '../config/quality-paths.js';
 import { askCopilot } from '../logic/copilot/copilot.service.js';
 import { buildQualityTools } from '../logic/copilot/tools.js';
 
@@ -40,7 +41,7 @@ export async function runCopilotDemo(artifactsDir: string): Promise<void> {
 
 const entrypoint = process.argv[1] ? pathToFileURL(process.argv[1]).href : '';
 if (import.meta.url === entrypoint) {
-  const artifactsDir = process.env.QUALITY_ARTIFACTS_DIR ?? '../quality/output';
+  const artifactsDir = process.env.QUALITY_ARTIFACTS_DIR ?? DEFAULT_QUALITY_ARTIFACTS_DIR;
   runCopilotDemo(artifactsDir).catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
