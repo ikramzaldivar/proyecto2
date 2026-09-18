@@ -6,12 +6,17 @@ existente, valida el COCO con `CocoDataset` y llama a las funciones puras de
 `dataset_quality.analyzers`, guardando cada reporte tal cual lo devuelven.
 
 La compuerta (pass/fail, CAL 08) NO vive aqui: le corresponde al modulo
-`dataset_quality.policy`. Cuando exista, se agrega como una tercera etapa en
-`dvc.yaml` que consuma `reports/metrics.json` y devuelva exit code != 0.
+`dataset_quality.policy` y la corre la etapa `release` (pipeline/build_release.py).
+
+Si alguna imagen del COCO no trae pHash, esta etapa se DETIENE con exit code
+distinto de cero en vez de solo avisar: el analisis de duplicados sobre un
+subconjunto de las imagenes da un resultado que parece valido y no lo es, y
+ese resultado alimenta tanto la compuerta como los splits.
 """
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from dataset_quality.adapters.config_loader import load_quality_config
@@ -20,6 +25,7 @@ from dataset_quality.analyzers.duplicates import analyze_duplicates
 from dataset_quality.analyzers.invalid_boxes import analyze_invalid_boxes
 from dataset_quality.analyzers.small_objects import analyze_small_objects
 from dataset_quality.analyzers.spatial_bias import analyze_spatial_bias
+from dataset_quality.cli import EXIT_CODE_EXECUTION_ERROR
 from dataset_quality.models.coco import CocoDataset
 
 
@@ -55,6 +61,15 @@ def main() -> None:
     hashes = json.loads(args.hashes.read_text(encoding="utf-8"))["hashes"]
 
     image_hashes, images_without_hash = build_image_hashes(dataset, hashes)
+    if images_without_hash:
+        print(
+            f"Error: {images_without_hash} de {len(dataset.images)} imagenes del COCO no tienen "
+            f"pHash en {args.hashes}. Sin ellas el analisis de duplicados quedaria incompleto y "
+            "arrastraria a la compuerta y a los splits, asi que la etapa se detiene. Revisa que "
+            "data/raw/images tenga todas las imagenes del export (dvc pull) y vuelve a correr.",
+            file=sys.stderr,
+        )
+        raise SystemExit(EXIT_CODE_EXECUTION_ERROR)
 
     min_images = config.checks["min_images_per_class"]
 
@@ -113,8 +128,6 @@ def main() -> None:
     )
 
     print(f"{len(reports)} reportes en {reports_dir} y resumen en {args.out / 'metrics.json'}")
-    if images_without_hash:
-        print(f"aviso: {images_without_hash} imagenes del COCO no tienen pHash calculado")
 
 
 if __name__ == "__main__":
