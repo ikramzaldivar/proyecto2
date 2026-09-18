@@ -3,6 +3,13 @@ from pydantic import BaseModel
 from dataset_quality.models.coco import CocoDataset
 from dataset_quality.models.config import CheckConfig, Severity
 
+# Tolerancia para imprecisión de punto flotante al comparar contra los
+# límites de la imagen — sin esto, una caja que legítimamente toca el
+# borde exacto (ej. x + width == image.width) puede marcarse como inválida
+# solo por redondeo binario (33.333333333333336 + 66.66666666666667 da
+# 100.00000000000001 en Python, no 100.0 exacto).
+BOUNDARY_EPSILON = 1e-6
+
 
 class InvalidBox(BaseModel):
     annotation_id: int
@@ -38,7 +45,10 @@ def analyze_invalid_boxes(dataset: CocoDataset, config: CheckConfig) -> InvalidB
             reasons.append("negative_coordinates")
 
         image = images_by_id.get(annotation.image_id)
-        if image is not None and (x + width > image.width or y + height > image.height):
+        if image is not None and (
+            x + width > image.width + BOUNDARY_EPSILON
+            or y + height > image.height + BOUNDARY_EPSILON
+        ):
             reasons.append("out_of_bounds")
 
         expected_area = width * height
