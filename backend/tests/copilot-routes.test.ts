@@ -1,5 +1,7 @@
 import { once } from 'node:events';
+import { mkdtemp, rm } from 'node:fs/promises';
 import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
@@ -66,5 +68,32 @@ describe('SPEC-COPILOT-004 — rutas del Copilot', () => {
     });
 
     expect(response.status).toBe(400);
+  });
+
+  it('POST /copilot/ask sin artefactos responde 200 (no 500)', async () => {
+    const emptyDir = await mkdtemp(path.join(tmpdir(), 'copilot-routes-empty-'));
+    const app = express();
+    app.use(express.json());
+    app.use(createCopilotRouter({ artifactsDir: emptyDir }));
+    const listener = app.listen(0);
+    await once(listener, 'listening');
+    const url = `http://127.0.0.1:${(listener.address() as AddressInfo).port}`;
+
+    try {
+      const response = await fetch(`${url}/copilot/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: '¿cuántas imágenes?' }),
+      });
+      const body = (await response.json()) as { grounded: boolean; answer: string };
+
+      expect(response.status).toBe(200);
+      expect(body.grounded).toBe(false);
+      expect(body.answer).toMatch(/no pude consultar/i);
+    } finally {
+      listener.close();
+      await once(listener, 'close');
+      await rm(emptyDir, { recursive: true, force: true });
+    }
   });
 });

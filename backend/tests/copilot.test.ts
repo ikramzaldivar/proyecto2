@@ -151,4 +151,17 @@ describe('SPEC-COPILOT-001 — fuente vacía y versión inexistente', () => {
 
     await expect(compare.run({ from: 'v1.0.0', to: 'v9.9.9' })).rejects.toThrow(/v9\.9\.9/);
   });
+
+  it('responde con honestidad (sin tronar) cuando faltan los artefactos', async () => {
+    const emptyDir = await mkdtemp(path.join(tmpdir(), 'copilot-missing-'));
+    try {
+      const answer = await askCopilot('¿cuántas imágenes?', buildQualityTools(emptyDir));
+
+      expect(answer.toolCalls).toEqual([]);
+      expect(answer.grounded).toBe(false);
+      expect(answer.answer).toMatch(/no pude consultar/i);
+    } finally {
+      await rm(emptyDir, { recursive: true, force: true });
+    }
+  });
 });

@@ -190,27 +190,52 @@ export async function askCopilot(
   }
 
   const toolCalls: CopilotToolCall[] = [];
+  const unavailable: string[] = [];
+
   for (const name of toolNames) {
     const tool = tools.find((candidate) => candidate.name === name);
-    if (!tool) continue;
-    const output = await tool.run({});
-    toolCalls.push({ name: tool.name, arguments: {}, ...output });
+    if (!tool) {
+      unavailable.push(name);
+      continue;
+    }
+    try {
+      const output = await tool.run({});
+      toolCalls.push({ name: tool.name, arguments: {}, ...output });
+    } catch {
+      // Falta el artefacto o el contrato no cuadra: no tumbamos toda la
+      // respuesta; seguimos con lo que sí esté disponible.
+      unavailable.push(name);
+    }
+  }
+
+  const providerName = provider?.name ?? 'none';
+
+  if (toolCalls.length === 0) {
+    return {
+      question,
+      answer: `No pude consultar el dataset porque faltan los artefactos de calidad (${unavailable.join(', ')}). Ejecuta el pipeline de calidad y vuelve a intentar.`,
+      grounded: false,
+      datasetVersion: null,
+      toolsUsed: [],
+      toolCalls: [],
+      provider: providerName,
+    };
   }
 
   const datasetVersion =
     toolCalls.map((call) => call.datasetVersion).find((value) => value !== null) ?? null;
-  const groundedAnswer = toolCalls.map(summarize).join(' ');
+  let answer = toolCalls.map(summarize).join(' ');
 
-  let answer = groundedAnswer;
-  const providerName = provider?.name ?? 'none';
-
-  if (provider && toolCalls.length > 0) {
+  if (provider) {
     try {
       answer = await provider.complete({ question, toolResults: toolCalls, datasetVersion });
     } catch {
       // El proveedor cayó: se responde en modo anclado, sin exponer el error.
-      answer = groundedAnswer;
     }
+  }
+
+  if (unavailable.length > 0) {
+    answer = `${answer} (No pude consultar: ${unavailable.join(', ')}.)`;
   }
 
   return {
