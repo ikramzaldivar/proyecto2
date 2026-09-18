@@ -37,3 +37,8 @@ output "rds_endpoint" {
   description = "Private MariaDB endpoint used by the backend."
   value       = aws_db_instance.app.endpoint
 }
+
+output "s3_vpc_endpoint_id" {
+  description = "Gateway endpoint that keeps S3 traffic inside the VPC."
+  value       = aws_vpc_endpoint.s3.id
+}
