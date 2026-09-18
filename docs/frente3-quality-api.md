@@ -45,6 +45,8 @@ calculadas en el frontend ni valores de ejemplo.
 | GET | `/quality/reannotation-queue` | Muestras FAIL con `annotation_id`, `image_id`, `reason`, `analyzer`, `severity` |
 | GET | `/quality/versions` | Timeline de versiones con estado DEV/PROD |
 | GET | `/quality/versions/diff?from=&to=` | Imágenes/cajas añadidas, Δ small objects, clases que entran/salen del mínimo |
+| GET | `/quality/settings` | `quality.yaml` como JSON (checks y splits) |
+| PUT | `/quality/settings` | Valida y **escribe** `quality.yaml`; 400 si la política es inválida |
 | GET | `/quality/embeddings` | Puntos PCA precomputados (APP 06) |
 
 ### Ejemplos
@@ -87,3 +89,18 @@ Frente 2.
 Los fixtures actuales representan el contrato acordado. Cuando Frente 2
 publique artefactos reales, basta con apuntar `QUALITY_ARTIFACTS_DIR` a su
 directorio de salida; los fixtures se conservan solo para pruebas.
+
+## 6. Vistas del portal (Story B)
+
+Las seis vistas viven bajo rutas propias y consumen el API anterior. Ninguna
+tiene cifras hardcodeadas: todas validan la respuesta con Zod y manejan
+carga / error / sin datos.
+
+| Ruta | Vista | Fuente |
+|---|---|---|
+| `/overview` | Resumen: totales, estado del gate y checks | `/quality/overview` |
+| `/analyzers` | 5 pestañas con gráficas y muestras navegables | `/quality/analyzers` |
+| `/splits` | Distribución por clase/split, fuga, seed y conteo antes/después | `/quality/splits` |
+| `/versions` | Timeline DEV/PROD y diff entre versiones | `/quality/versions` |
+| `/settings` | Edita y persiste `quality.yaml` | `/quality/settings` |
+| `/copilot` | Vista del Copilot (su backend MCP es la story COP 01-02) | contrato de calidad |
