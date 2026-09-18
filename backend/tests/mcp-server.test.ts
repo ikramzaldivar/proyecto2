@@ -1,3 +1,5 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -77,5 +79,25 @@ describe('SPEC-COPILOT-003 — servidor MCP', () => {
     );
 
     expect(response.error?.code).toBe(-32601);
+  });
+
+  it('tools/call con fuente vacía responde con error sin romper el protocolo', async () => {
+    const emptyDir = await mkdtemp(path.join(tmpdir(), 'mcp-empty-'));
+    try {
+      const response = await handleMcpMessage(
+        {
+          jsonrpc: '2.0',
+          id: 6,
+          method: 'tools/call',
+          params: { name: 'get_dataset_overview', arguments: {} },
+        },
+        buildQualityTools(emptyDir),
+      );
+
+      expect(response.error).toBeDefined();
+      expect(response.error?.message).toMatch(/release\.json/);
+    } finally {
+      await rm(emptyDir, { recursive: true, force: true });
+    }
   });
 });

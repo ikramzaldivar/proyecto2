@@ -129,3 +129,26 @@ describe('SPEC-COPILOT-002 — el Copilot responde con tools', () => {
     expect(answer.grounded).toBe(true);
   });
 });
+
+describe('SPEC-COPILOT-001 — fuente vacía y versión inexistente', () => {
+  it('una tool falla claramente si el directorio de artefactos está vacío', async () => {
+    const emptyDir = await mkdtemp(path.join(tmpdir(), 'copilot-empty-'));
+    try {
+      const tools = buildQualityTools(emptyDir);
+      const overview = tools.find((candidate) => candidate.name === 'get_dataset_overview');
+      if (!overview) throw new Error('falta get_dataset_overview');
+
+      await expect(overview.run({})).rejects.toThrow(/release\.json/);
+    } finally {
+      await rm(emptyDir, { recursive: true, force: true });
+    }
+  });
+
+  it('compare_versions falla si la versión no existe', async () => {
+    const tools = buildQualityTools(FIXTURES);
+    const compare = tools.find((candidate) => candidate.name === 'compare_versions');
+    if (!compare) throw new Error('falta compare_versions');
+
+    await expect(compare.run({ from: 'v1.0.0', to: 'v9.9.9' })).rejects.toThrow(/v9\.9\.9/);
+  });
+});
