@@ -83,7 +83,18 @@ def test_load_quality_config_reads_the_real_file() -> None:
 
     assert config.checks["min_images_per_class"].threshold == 300
     assert config.checks["min_images_per_class"].severity == "fail"
+    assert config.checks["min_images_per_class"].min_classes == 2
     assert set(config.checks.keys()) == REQUIRED_CHECKS
+
+
+def test_check_config_accepts_min_classes() -> None:
+    check = CheckConfig(threshold=300, severity="fail", min_classes=2)
+    assert check.min_classes == 2
+
+
+def test_check_config_rejects_min_classes_below_one() -> None:
+    with pytest.raises(ValidationError, match="min_classes"):
+        CheckConfig(threshold=300, severity="fail", min_classes=0)
 
 
 def test_load_quality_config_raises_clear_error_when_file_is_missing(tmp_path: Path) -> None:

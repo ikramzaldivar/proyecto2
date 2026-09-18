@@ -1,0 +1,5 @@
+# Use the immutable Git commit tag pushed to both ECR repositories.
+container_image_tag = "replace-with-git-sha"
+
+# The portal is public by default. Replace this with trusted CIDRs when possible.
+allowed_http_cidrs = ["0.0.0.0/0"]
