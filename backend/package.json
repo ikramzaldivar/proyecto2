@@ -10,6 +10,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/ui/server.js",
     "start:prod": "cross-env NODE_ENV=production PORT=3100 node dist/ui/server.js",
+    "embeddings": "tsx src/tools/precompute-embeddings.ts",
+    "embeddings:prod": "node dist/tools/precompute-embeddings.js",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

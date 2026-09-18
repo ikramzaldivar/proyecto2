@@ -120,6 +120,13 @@ Contrato de `embeddings.json` (lo produce el pipeline de calidad):
 | `explained_variance` | Varianza explicada por los 2 componentes |
 | `points[]` | `image_id`, `file_name`, `x`, `y`, `category_ids`, `box_count` |
 
-Regeneración: la precomputación corresponde al pipeline de calidad (Frente 2).
-Hoy `main` **no** emite `embeddings.json`, así que el portal usa un fixture
-tipado; el paso pendiente está listado en `docs/frente3-pendientes.md`.
+Regeneración **reproducible y offline** (desde `backend/`):
+
+```bash
+npm run embeddings -- --coco <ruta-al-coco.json> --output <ruta-a-embeddings.json>
+# opcional, para una salida 100% determinista:
+#   ... --generated-at 2026-09-18T00:00:00Z
+```
+
+Es determinista: la misma entrada produce las mismas coordenadas, así que
+puede engancharse como una etapa de DVC junto al resto del pipeline.
