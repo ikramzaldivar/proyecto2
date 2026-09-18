@@ -94,3 +94,9 @@ variable "github_repository" {
   type        = string
   default     = "ikramzaldivar/proyecto2"
 }
+
+variable "terraform_state_key" {
+  description = "Object key of the Terraform state in the backend bucket."
+  type        = string
+  default     = "fargate/terraform.tfstate"
+}

@@ -41,17 +41,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.3
+
+      # Estas tres no necesitan credenciales: corren siempre.
+      - name: Format
+        run: terraform fmt -check -recursive
+
+      - name: Init sin backend
+        run: terraform init -backend=false
+
+      - name: Validate
+        run: terraform validate
+
+      # El plan si necesita AWS. Se omite mientras el rol de OIDC no exista,
+      # para que el CI no falle durante el arranque.
+      - name: Hay rol de CI configurado?
+        id: oidc
+        env:
+          ROLE_ARN: ${{ secrets.AWS_CI_ROLE_ARN }}
+        run: |
+          if [ -n "$ROLE_ARN" ]; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::Falta el secret AWS_CI_ROLE_ARN. Se omite terraform plan."
+          fi
+
       - name: Autenticar en AWS por OIDC
+        if: steps.oidc.outputs.ready == 'yes'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_CI_ROLE_ARN }}
           aws-region: us-east-2
 
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.16.3
-
       - name: Tomar el tag de la imagen desplegada
+        if: steps.oidc.outputs.ready == 'yes'
         run: |
           TAG=$(aws ecs describe-task-definition \
             --task-definition proyecto2-prod-backend \
@@ -60,14 +86,10 @@ jobs:
           echo "Tag desplegado: $TAG"
           echo "TF_VAR_container_image_tag=$TAG" >> "$GITHUB_ENV"
 
-      - name: Init
-        run: terraform init -backend-config=backend.hcl.example
-
-      - name: Format
-        run: terraform fmt -check -recursive
-
-      - name: Validate
-        run: terraform validate
+      - name: Init con backend
+        if: steps.oidc.outputs.ready == 'yes'
+        run: terraform init -reconfigure -backend-config=backend.hcl.example
 
       - name: Plan
+        if: steps.oidc.outputs.ready == 'yes'
         run: terraform plan -no-color

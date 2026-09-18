@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "github_actions_state_lock" {
       "s3:DeleteObject",
     ]
 
-    resources = ["${aws_s3_bucket.terraform_state.arn}/*"]
+    resources = ["${aws_s3_bucket.terraform_state.arn}/${var.terraform_state_key}.tflock"]
   }
 }
 
