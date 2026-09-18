@@ -10,6 +10,12 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/ui/server.js",
     "start:prod": "cross-env NODE_ENV=production PORT=3100 node dist/ui/server.js",
+    "embeddings": "tsx src/tools/precompute-embeddings.ts",
+    "embeddings:prod": "node dist/tools/precompute-embeddings.js",
+    "validate:release": "tsx src/tools/validate-release.ts",
+    "copilot:demo": "tsx src/tools/copilot-demo.ts",
+    "mcp": "tsx src/mcp/server.ts",
+    "mcp:prod": "node dist/mcp/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -35,6 +41,7 @@
     "multer": "^2.3.0",
     "mysql2": "^3.24.2",
     "sharp": "^0.35.4",
+    "yaml": "^2.9.1",
     "zod": "^4.5.4"
   },
   "devDependencies": {

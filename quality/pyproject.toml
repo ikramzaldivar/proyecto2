@@ -5,8 +5,14 @@ description = "Validación, análisis y compuerta de calidad para el dataset COC
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "pydantic>=2.7",
+    "pydantic-settings>=2.4",
     "pyyaml>=6.0",
+    "Pillow>=10.0",
+    "imagehash>=4.3",
 ]
+
+[project.scripts]
+quality-gate = "dataset_quality.cli:main"
 
 [project.optional-dependencies]
 dev = [

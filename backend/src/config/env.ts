@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
+import { DEFAULT_QUALITY_ARTIFACTS_DIR, DEFAULT_QUALITY_CONFIG_PATH } from './quality-paths.js';
 
 /**
  * Valida las variables de entorno usadas por la aplicación.
@@ -55,6 +56,18 @@ const envSchema = z
       .int()
       .positive()
       .default(5 * 1024 * 1024),
+
+    // Artefactos del pipeline de calidad (Frente 3). El portal solo los lee.
+    QUALITY_ARTIFACTS_DIR: z.string().min(1).default(DEFAULT_QUALITY_ARTIFACTS_DIR),
+
+    // Política de calidad que la pantalla Settings puede editar.
+    QUALITY_CONFIG_PATH: z.string().min(1).default(DEFAULT_QUALITY_CONFIG_PATH),
+
+    // Copilot: proveedor de LLM opcional. La API key nunca se versiona; si
+    // falta, el Copilot responde en modo anclado a las herramientas.
+    COPILOT_PROVIDER: z.enum(['none', 'anthropic', 'mistral']).default('none'),
+    COPILOT_API_KEY: z.string().min(1).optional(),
+    COPILOT_MODEL: z.string().min(1).optional(),
   })
   .superRefine((value, context) => {
     if (!value.DATABASE_URL) {

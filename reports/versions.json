@@ -1,0 +1,47 @@
+{
+  "minimumImagesPerClass": 300,
+  "versions": [
+    {
+      "version": "v1.0.0",
+      "createdAt": "2026-09-18T20:52:16.278727Z",
+      "commit": "7e36ecc",
+      "dvcRevision": "2ae957bda56b5cf9293fd620b781e699",
+      "parentVersion": null,
+      "environments": {
+        "dev": {
+          "status": "pushed",
+          "contentHash": "2ae957bda56b5cf9293fd620b781e699"
+        },
+        "prod": {
+          "status": "pushed",
+          "contentHash": "2ae957bda56b5cf9293fd620b781e699"
+        }
+      },
+      "totals": {
+        "images": 689,
+        "annotations": 1455,
+        "categories": 3
+      },
+      "metrics": {
+        "smallObjectsPercent": 0.4123711340206186,
+        "classImbalanceRatio": 5.929577464788732,
+        "duplicateGroups": 1,
+        "invalidBoxes": 0
+      },
+      "classCounts": [
+        {
+          "categoryId": 1,
+          "distinctImages": 421
+        },
+        {
+          "categoryId": 2,
+          "distinctImages": 399
+        },
+        {
+          "categoryId": 3,
+          "distinctImages": 71
+        }
+      ]
+    }
+  ]
+}

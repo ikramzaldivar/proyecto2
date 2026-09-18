@@ -88,3 +88,15 @@ variable "log_retention_days" {
   type        = number
   default     = 7
 }
+
+variable "github_repository" {
+  description = "GitHub repository allowed to assume the CI role, as owner/name."
+  type        = string
+  default     = "ikramzaldivar/proyecto2"
+}
+
+variable "terraform_state_key" {
+  description = "Object key of the Terraform state in the backend bucket."
+  type        = string
+  default     = "fargate/terraform.tfstate"
+}

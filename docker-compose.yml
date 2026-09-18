@@ -50,6 +50,13 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: image-annotations
       MAX_UPLOAD_SIZE_BYTES: 5242880
+      # Vistas de calidad: el portal lee lo que escribe el pipeline de DVC
+      # (reports/) y Settings edita la misma politica que lee dvc.yaml.
+      QUALITY_ARTIFACTS_DIR: /artifacts
+      QUALITY_CONFIG_PATH: /config/quality.yaml
+    volumes:
+      - ./reports:/artifacts:ro
+      - ./quality/quality.yaml:/config/quality.yaml
     ports:
       - "3100:3100"
     restart: on-failure:5
