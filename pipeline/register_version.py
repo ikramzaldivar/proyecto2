@@ -5,9 +5,12 @@ funciones puras de `dataset_quality.policy.version_registry` y escribe el
 registro. Corre DESPUES de la etapa `release`, a mano y solo cuando el equipo
 decide cortar una version:
 
-    python pipeline/register_version.py --release reports/release.json \\
-        --config quality/quality.yaml --registry reports/versions.json \\
-        --version v1.0.0
+    PYTHONPATH=quality/src python pipeline/register_version.py \\
+        --release reports/release.json --config quality/quality.yaml \\
+        --registry reports/versions.json --version v1.0.0
+
+`PYTHONPATH=quality/src` es el mismo atajo que usan las etapas de `dvc.yaml`:
+evita instalar el paquete solo para correr el script.
 
 `reports/versions.json` SI se versiona en git (a diferencia del resto de
 `reports/`): es el historial de releases y no se puede regenerar desde cero.

@@ -53,7 +53,8 @@ const ROUTES: RouteRule[] = [
   {
     // `cajas` sin más es del resumen; "cajas inválidas" ya tiene su propia herramienta
     // y no debe arrastrar también las cifras generales.
-    patterns: /resumen|total|im[aá]genes|cajas(?!\s+inv[aá]lid)|categor[ií]as|gate|compuerta|estado/i,
+    patterns:
+      /resumen|total|im[aá]genes|cajas(?!\s+inv[aá]lid)|categor[ií]as|gate|compuerta|estado/i,
     tool: 'get_dataset_overview',
   },
 ];

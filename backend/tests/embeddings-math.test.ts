@@ -85,7 +85,9 @@ describe('SPEC-APP06-001 — coordenadas', () => {
   });
 
   it('están escaladas para que el máximo absoluto sea exactamente 1', () => {
-    const maxAbs = Math.max(...bundle.points.flatMap((point) => [Math.abs(point.x), Math.abs(point.y)]));
+    const maxAbs = Math.max(
+      ...bundle.points.flatMap((point) => [Math.abs(point.x), Math.abs(point.y)]),
+    );
 
     expect(maxAbs).toBeCloseTo(1, 12);
   });
