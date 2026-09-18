@@ -142,6 +142,22 @@ describe('SPEC-QUALITY-API-007 — endpoints /quality', () => {
     }
   });
 
+  it('GET /quality/embeddings devuelve los puntos precomputados con categorías', async () => {
+    const response = await fetch(`${baseUrl}/quality/embeddings`);
+    const body = (await response.json()) as {
+      method: string;
+      points: unknown[];
+      categories: unknown[];
+      datasetVersion: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.method).toBe('pca');
+    expect(body.points.length).toBeGreaterThan(0);
+    expect(body.categories.length).toBeGreaterThan(0);
+    expect(body.datasetVersion).toBe('v1.0.0-demo');
+  });
+
   it('GET /quality/settings devuelve la política de calidad', async () => {
     const response = await fetch(`${baseUrl}/quality/settings`);
     const body = (await response.json()) as {
