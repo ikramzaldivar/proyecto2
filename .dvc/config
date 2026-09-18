@@ -4,3 +4,4 @@
 ['remote "dev"']
     url = s3://proyecto2-dvc-dev
     endpointurl = http://localhost:9000
+    use_ssl = false
