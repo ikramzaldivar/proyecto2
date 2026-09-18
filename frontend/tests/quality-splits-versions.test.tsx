@@ -207,7 +207,9 @@ describe('SPEC-QUALITY-UI-005 — Versions', () => {
 
     const diff = within(screen.getByTestId('version-diff'));
     expect(diff.getByText(/370/)).toBeInTheDocument();
-    expect(diff.getByText(/dog|#3/)).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('version-diff-left-minimum')).getByText('#3'),
+    ).toBeInTheDocument();
   });
 
   it('compara el conteo por clase entre las dos versiones', () => {

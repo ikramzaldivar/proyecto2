@@ -139,7 +139,7 @@ function DiffContent({ data }: { data: VersionDiff }) {
           {data.classesThatLeftMinimum.length === 0 ? (
             <p className="mt-1 text-sm text-ink-muted">Ninguna.</p>
           ) : (
-            <ul className="mt-1 flex flex-wrap gap-2">
+            <ul data-testid="version-diff-left-minimum" className="mt-1 flex flex-wrap gap-2">
               {data.classesThatLeftMinimum.map((categoryId) => (
                 <li
                   key={categoryId}
@@ -170,6 +170,35 @@ function DiffContent({ data }: { data: VersionDiff }) {
             </ul>
           )}
         </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-border">
+        <table data-testid="version-diff-classes" className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-border bg-sidebar text-left text-xs uppercase tracking-wide text-ink-faint">
+              <th className="px-3 py-2 font-medium">Clase</th>
+              <th className="px-3 py-2 font-medium">Desde</th>
+              <th className="px-3 py-2 font-medium">Hasta</th>
+              <th className="px-3 py-2 font-medium">Δ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.classCountChanges.map((row) => (
+              <tr
+                key={row.categoryId}
+                data-testid={`class-diff-${row.categoryId}`}
+                className="border-b border-border last:border-b-0"
+              >
+                <td className="px-3 py-2 font-mono text-ink">#{row.categoryId}</td>
+                <td className="px-3 py-2 text-ink-muted">{row.from}</td>
+                <td className="px-3 py-2 text-ink-muted">{row.to}</td>
+                <td className="px-3 py-2">
+                  <DeltaValue value={row.delta} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

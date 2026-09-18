@@ -253,6 +253,14 @@ export const versionDiffSchema = z.object({
   invalidBoxesDelta: z.number(),
   classesThatLeftMinimum: z.array(z.number()),
   classesThatEnteredMinimum: z.array(z.number()),
+  classCountChanges: z.array(
+    z.object({
+      categoryId: z.number(),
+      from: z.number(),
+      to: z.number(),
+      delta: z.number(),
+    })
+  ),
   totals: z.object({ from: totalsSchema, to: totalsSchema }),
 });
 export type VersionDiff = z.infer<typeof versionDiffSchema>;

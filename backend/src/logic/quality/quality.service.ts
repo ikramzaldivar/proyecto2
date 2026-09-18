@@ -69,7 +69,15 @@ export interface VersionDiff {
   invalidBoxesDelta: number;
   classesThatLeftMinimum: number[];
   classesThatEnteredMinimum: number[];
+  classCountChanges: ClassCountChange[];
   totals: { from: DatasetTotals; to: DatasetTotals };
+}
+
+export interface ClassCountChange {
+  categoryId: number;
+  from: number;
+  to: number;
+  delta: number;
 }
 
 function summarizeGate(bundle: ReleaseBundle): GateSummary {
@@ -174,6 +182,13 @@ export function diffVersions(versions: VersionsFile, from: string, to: string): 
     invalidBoxesDelta: toEntry.metrics.invalidBoxes - fromEntry.metrics.invalidBoxes,
     classesThatLeftMinimum,
     classesThatEnteredMinimum,
+    classCountChanges: [...allCategoryIds]
+      .sort((a, b) => a - b)
+      .map((categoryId) => {
+        const before = fromCounts.get(categoryId) ?? 0;
+        const after = toCounts.get(categoryId) ?? 0;
+        return { categoryId, from: before, to: after, delta: after - before };
+      }),
     totals: { from: fromEntry.totals, to: toEntry.totals },
   };
 }
