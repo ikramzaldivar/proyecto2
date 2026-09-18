@@ -3,6 +3,7 @@ import { AnnotateScreen } from "@/components/annotate/AnnotateScreen";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { UploadScreen } from "@/components/upload/UploadScreen";
 import { DashboardPage } from "@/pages/Dashboard";
+import { OverviewPage } from "@/pages/quality/OverviewPage";
 import { SearchPage } from "@/pages/SearchPage";
 
 export function App(): JSX.Element {
@@ -26,6 +27,15 @@ export function App(): JSX.Element {
         element={
           <AppLayout>
             <UploadScreen />
+          </AppLayout>
+        }
+      />
+      {/* Seis vistas de calidad del Proyecto 2 (Frente 3). */}
+      <Route
+        path="/overview"
+        element={
+          <AppLayout>
+            <OverviewPage />
           </AppLayout>
         }
       />

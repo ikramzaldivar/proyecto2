@@ -91,9 +91,10 @@ describe('SPEC-QUALITY-UI-002 — Overview con datos reales', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('v1.0.0-demo')).toBeInTheDocument();
-    expect(screen.getByText('12')).toBeInTheDocument();
-    expect(screen.getByText('15')).toBeInTheDocument();
+    expect(screen.getByText("v1.0.0-demo")).toBeInTheDocument();
+    const totals = within(screen.getByTestId("overview-totals"));
+    expect(totals.getByText("12")).toBeInTheDocument();
+    expect(totals.getByText("15")).toBeInTheDocument();
   });
 
   it('muestra el estado del gate y el conteo de checks fallidos', () => {
@@ -105,7 +106,7 @@ describe('SPEC-QUALITY-UI-002 — Overview con datos reales', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/FAIL/i)).toBeInTheDocument();
+    expect(screen.getByTestId("gate-status")).toHaveTextContent("FAIL");
     expect(screen.getByText(/checks fallidos/i)).toBeInTheDocument();
     expect(screen.getByText(/invalid_boxes/)).toBeInTheDocument();
   });
