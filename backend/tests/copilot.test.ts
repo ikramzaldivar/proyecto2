@@ -3,10 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import {
-  type CopilotProvider,
-  askCopilot,
-} from '../src/logic/copilot/copilot.service.js';
+import { askCopilot, type CopilotProvider } from '../src/logic/copilot/copilot.service.js';
 import { buildQualityTools } from '../src/logic/copilot/tools.js';
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'quality');
@@ -20,9 +17,9 @@ const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtur
 
 async function writeReleaseInTempDir(mutate: (release: { totals: { images: number } }) => void) {
   const dir = await mkdtemp(path.join(tmpdir(), 'copilot-src-'));
-  const release = JSON.parse(
-    await readFile(path.join(FIXTURES, 'release.json'), 'utf-8'),
-  ) as { totals: { images: number } };
+  const release = JSON.parse(await readFile(path.join(FIXTURES, 'release.json'), 'utf-8')) as {
+    totals: { images: number };
+  };
   mutate(release);
   await writeFile(path.join(dir, 'release.json'), JSON.stringify(release), 'utf-8');
   await writeFile(
@@ -93,10 +90,7 @@ describe('SPEC-COPILOT-002 — el Copilot responde con tools', () => {
   });
 
   it('responde honestamente cuando el dataset no puede contestar', async () => {
-    const answer = await askCopilot(
-      '¿cuál es la capital de Francia?',
-      buildQualityTools(FIXTURES),
-    );
+    const answer = await askCopilot('¿cuál es la capital de Francia?', buildQualityTools(FIXTURES));
 
     expect(answer.toolCalls).toEqual([]);
     expect(answer.grounded).toBe(false);
@@ -108,9 +102,9 @@ describe('SPEC-COPILOT-002 — el Copilot responde con tools', () => {
     const first = await askCopilot('¿cuántas imágenes?', buildQualityTools(dir));
     expect(first.answer).toContain('12');
 
-    const release = JSON.parse(
-      await readFile(path.join(dir, 'release.json'), 'utf-8'),
-    ) as { totals: { images: number } };
+    const release = JSON.parse(await readFile(path.join(dir, 'release.json'), 'utf-8')) as {
+      totals: { images: number };
+    };
     release.totals.images = 99;
     await writeFile(path.join(dir, 'release.json'), JSON.stringify(release), 'utf-8');
 
@@ -128,11 +122,7 @@ describe('SPEC-COPILOT-002 — el Copilot responde con tools', () => {
       },
     };
 
-    const answer = await askCopilot(
-      '¿cuántas imágenes?',
-      buildQualityTools(FIXTURES),
-      provider,
-    );
+    const answer = await askCopilot('¿cuántas imágenes?', buildQualityTools(FIXTURES), provider);
 
     expect(answer.provider).toBe('fake-provider');
     expect(answer.answer).toContain('12');

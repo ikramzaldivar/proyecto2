@@ -30,6 +30,16 @@ export type {
 } from './coco-export.builder.js';
 export { buildCocoDataset } from './coco-export.builder.js';
 export { exportCocoDataset } from './coco-export.service.js';
+// Frente 3 — Dataset Copilot y MCP (SPEC-COPILOT-001..004)
+export type {
+  CopilotAnswer,
+  CopilotProvider,
+  CopilotToolCall,
+} from './copilot/copilot.service.js';
+export { askCopilot, selectToolsForQuestion } from './copilot/copilot.service.js';
+export { buildProvider } from './copilot/provider.js';
+export type { CopilotTool, ToolOutput } from './copilot/tools.js';
+export { buildQualityTools } from './copilot/tools.js';
 // Dashboard (SPEC-DASH-001)
 export type {
   AnnotationProgress,
