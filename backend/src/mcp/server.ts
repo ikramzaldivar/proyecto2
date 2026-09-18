@@ -1,4 +1,5 @@
 import { pathToFileURL } from 'node:url';
+import { DEFAULT_QUALITY_ARTIFACTS_DIR } from '../config/quality-paths.js';
 import { buildQualityTools, type CopilotTool } from '../logic/copilot/tools.js';
 
 /**
@@ -141,6 +142,6 @@ export function runStdioServer(tools: CopilotTool[]): void {
 // base de datos ni MinIO (por eso no usa el schema completo de `env`).
 const entrypoint = process.argv[1] ? pathToFileURL(process.argv[1]).href : '';
 if (import.meta.url === entrypoint) {
-  const artifactsDir = process.env.QUALITY_ARTIFACTS_DIR ?? '../quality/output';
+  const artifactsDir = process.env.QUALITY_ARTIFACTS_DIR ?? DEFAULT_QUALITY_ARTIFACTS_DIR;
   runStdioServer(buildQualityTools(artifactsDir));
 }

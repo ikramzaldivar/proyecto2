@@ -49,6 +49,22 @@ stages:
       - reports/metrics.json:
           cache: false
 
+  # Coordenadas PCA que pinta la vista Analytics. Se calculan aqui, offline, y
+  # el navegador solo las dibuja. Depende solo del COCO: no se rehace cuando
+  # cambia quality.yaml. Necesita Node y `npm ci` en backend/ (no Python).
+  #
+  # --generated-at fija una fecha centinela a proposito: el timestamp real del
+  # release vive en release.json, y una fecha distinta en cada corrida
+  # cambiaria el hash de embeddings.json aunque los datos no cambien.
+  embeddings:
+    cmd: cd backend && npm run --silent embeddings -- --coco ../data/annotations/coco-dataset.json --output ../reports/embeddings.json --generated-at 1970-01-01T00:00:00Z
+    deps:
+      - data/annotations/coco-dataset.json
+      - backend/src/logic/quality/embeddings.generator.ts
+      - backend/src/tools/precompute-embeddings.ts
+    outs:
+      - reports/embeddings.json
+
   release:
     cmd: PYTHONPATH=quality/src python pipeline/build_release.py --coco data/annotations/coco-dataset.json --config quality/quality.yaml --analyzers-dir reports/analyzers --out reports/release.json
     deps:

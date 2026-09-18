@@ -51,7 +51,10 @@ const ROUTES: RouteRule[] = [
     tool: 'get_class_distribution',
   },
   {
-    patterns: /resumen|total|im[aá]genes|cajas|categor[ií]as|gate|compuerta|estado/i,
+    // `cajas` sin más es del resumen; "cajas inválidas" ya tiene su propia herramienta
+    // y no debe arrastrar también las cifras generales.
+    patterns:
+      /resumen|total|im[aá]genes|cajas(?!\s+inv[aá]lid)|categor[ií]as|gate|compuerta|estado/i,
     tool: 'get_dataset_overview',
   },
 ];

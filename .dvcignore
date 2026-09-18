@@ -4,3 +4,9 @@
 
 # macOS crea este archivo al abrir carpetas en Finder y altera el hash del dataset.
 .DS_Store
+
+# El bytecode de Python aparece al correr pytest o `pip install -e`; git ya lo
+# ignora, pero DVC no, y cambiaba el hash de quality/src/dataset_quality
+# (dependencia de analyze y release) segun quien hubiera corrido que.
+__pycache__
+*.pyc
