@@ -1,0 +1,3 @@
+['remote "prod"']
+    url = s3://proyecto2-prod-dvc-595981034933
+    region = us-east-2
