@@ -5,6 +5,7 @@ import type {
   CheckResult,
   ClassCountComparison,
   DatasetTotals,
+  EmbeddingBundle,
   LeakageReport,
   ReleaseBundle,
   SplitDistribution,
@@ -80,6 +81,15 @@ export interface ClassCountChange {
   delta: number;
 }
 
+export interface EmbeddingsView {
+  datasetVersion: string;
+  method: EmbeddingBundle['method'];
+  generatedAt: string;
+  explainedVariance: number[];
+  categories: CategoryRef[];
+  points: EmbeddingBundle['points'];
+}
+
 function summarizeGate(bundle: ReleaseBundle): GateSummary {
   let passCount = 0;
   let warnCount = 0;
@@ -132,6 +142,25 @@ export function buildSplits(bundle: ReleaseBundle): SplitsView {
     leakage: bundle.splits.leakage,
     classCounts: bundle.class_counts,
     categories: bundle.categories,
+  };
+}
+
+/**
+ * Enriquiece las coordenadas precomputadas con la versión y los nombres de
+ * categoría del release, para que el frontend no tenga que hacer una segunda
+ * llamada solo para etiquetar los puntos.
+ */
+export function buildEmbeddingsView(
+  embeddings: EmbeddingBundle,
+  release: ReleaseBundle,
+): EmbeddingsView {
+  return {
+    datasetVersion: release.dataset_version,
+    method: embeddings.method,
+    generatedAt: embeddings.generated_at,
+    explainedVariance: embeddings.explained_variance,
+    categories: release.categories,
+    points: embeddings.points,
   };
 }
 

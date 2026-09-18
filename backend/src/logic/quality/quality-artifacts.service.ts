@@ -1,7 +1,6 @@
 import { readQualityArtifact } from '../../data/artifacts/quality-artifact.repository.js';
 import { NotFoundError } from '../errors.js';
 import {
-  type EmbeddingBundle,
   parseEmbeddings,
   parseReleaseBundle,
   parseVersions,
@@ -12,9 +11,11 @@ import {
 import {
   type AnalyzersView,
   buildAnalyzers,
+  buildEmbeddingsView,
   buildOverview,
   buildSplits,
   diffVersions,
+  type EmbeddingsView,
   type OverviewView,
   type SplitsView,
   type VersionDiff,
@@ -73,12 +74,14 @@ export async function getVersionDiff(
   return diffVersions(await getVersions(artifactsDir), from, to);
 }
 
-export async function getEmbeddings(artifactsDir: string): Promise<EmbeddingBundle> {
+export async function getEmbeddings(artifactsDir: string): Promise<EmbeddingsView> {
   const raw = await readQualityArtifact(artifactsDir, 'embeddings.json');
   if (raw === null) {
     throw new NotFoundError(
       `No hay embeddings.json en "${artifactsDir}". La analítica exploratoria aún no se precomputó.`,
     );
   }
-  return parseEmbeddings(raw);
+  const embeddings = parseEmbeddings(raw);
+  const release = await loadRelease(artifactsDir);
+  return buildEmbeddingsView(embeddings, release);
 }

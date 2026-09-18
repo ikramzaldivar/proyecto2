@@ -85,6 +85,7 @@ export {
 // Frente 3 — artefactos del pipeline de calidad (SPEC-QUALITY-API-001..007)
 export type {
   AnalyzersView,
+  EmbeddingsView,
   GateSummary,
   OverviewView,
   SplitsView,
@@ -92,6 +93,7 @@ export type {
 } from './quality/quality.service.js';
 export {
   buildAnalyzers,
+  buildEmbeddingsView,
   buildOverview,
   buildSplits,
   diffVersions,

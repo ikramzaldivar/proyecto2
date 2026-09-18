@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 import { NotFoundError } from '../logic/errors.js';
 import {
   getAnalyzers,
+  getEmbeddings,
   getOverview,
   getReannotationQueue,
   getSplits,
@@ -59,6 +60,8 @@ export function createQualityRouter({ artifactsDir, configPath }: QualityRouterO
   router.get('/quality/reannotation-queue', (_req, res) =>
     respond(res, () => getReannotationQueue(artifactsDir)),
   );
+
+  router.get('/quality/embeddings', (_req, res) => respond(res, () => getEmbeddings(artifactsDir)));
 
   router.get('/quality/versions', (_req, res) => respond(res, () => getVersions(artifactsDir)));
 
