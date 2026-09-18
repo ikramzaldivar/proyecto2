@@ -1,0 +1,64 @@
+# Pipeline de calidad del dataset.
+#
+# Tres etapas encadenadas:
+#
+#   hash_images  ->  analyze  ->  release
+#
+# hash_images es la unica que toca las imagenes una por una (cara), asi que se
+# cachea aparte. Cambiar un umbral en quality.yaml vuelve a correr analyze y
+# release pero NO hash_images; cambiar el dataset las vuelve a correr las tres.
+#
+# quality.yaml entra como `params` y no como `deps` a proposito: ademas de dar
+# esa granularidad, habilita `dvc params diff` y `dvc metrics diff` para el
+# diff entre releases.
+#
+# PYTHONPATH=quality/src evita tener que instalar el paquete para reproducir
+# el pipeline: `dvc repro` funciona en limpio con solo las dependencias de
+# quality/pyproject.toml instaladas.
+#
+# La version semantica del release sale de la variable de entorno
+# DATASET_VERSION (default v0.0.0-dev). No es un dep de DVC, asi que para
+# re-cortar un release con otra version hay que forzar la etapa:
+#
+#   DATASET_VERSION=v1.2.0 dvc repro -f release
+
+stages:
+  hash_images:
+    cmd: PYTHONPATH=quality/src python pipeline/hash_images.py --images data/raw/images --out reports/image_hashes.json
+    deps:
+      - data/raw
+      - pipeline/hash_images.py
+      - quality/src/dataset_quality/adapters/phash.py
+    outs:
+      - reports/image_hashes.json
+
+  analyze:
+    cmd: PYTHONPATH=quality/src python pipeline/run_analyzers.py --coco data/annotations/coco-dataset.json --config quality/quality.yaml --hashes reports/image_hashes.json --out reports
+    deps:
+      - data/annotations/coco-dataset.json
+      - pipeline/run_analyzers.py
+      - quality/src/dataset_quality
+      - reports/image_hashes.json
+    params:
+      - quality/quality.yaml:
+          - checks
+          - splits
+    outs:
+      - reports/analyzers
+    metrics:
+      - reports/metrics.json:
+          cache: false
+
+  release:
+    cmd: PYTHONPATH=quality/src python pipeline/build_release.py --coco data/annotations/coco-dataset.json --config quality/quality.yaml --analyzers-dir reports/analyzers --out reports/release.json
+    deps:
+      - data/annotations/coco-dataset.json
+      - pipeline/build_release.py
+      - quality/src/dataset_quality
+      - reports/analyzers
+    params:
+      - quality/quality.yaml:
+          - checks
+          - splits
+    outs:
+      - reports/release.json

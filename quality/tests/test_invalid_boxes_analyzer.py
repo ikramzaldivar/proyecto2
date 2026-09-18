@@ -51,6 +51,29 @@ def test_valid_box_is_not_flagged() -> None:
     assert VALID_ID not in invalid_ids
 
 
+def test_box_touching_the_border_with_float_rounding_is_not_a_false_positive() -> None:
+    # Reportado por el PM: x + width puede dar un poco más de image.width
+    # solo por imprecisión de punto flotante (ej. 33.333333333333336 +
+    # 66.66666666666667 = 100.00000000000001 en Python), sin que la caja
+    # realmente se salga de la imagen. No debe marcarse out_of_bounds.
+    dataset = CocoDataset.model_validate(
+        {
+            "images": [{"id": IMAGE_ID, "file_name": "a.jpg", "width": 100, "height": 100}],
+            "categories": [{"id": CATEGORY_ID, "name": "car"}],
+            "annotations": [
+                _annotation(
+                    99,
+                    [33.333333333333336, 0, 66.66666666666667, 20],
+                    66.66666666666667 * 20,
+                )
+            ],
+        }
+    )
+    report = analyze_invalid_boxes(dataset, CheckConfig(threshold=0, severity="fail"))
+    box = next((b for b in report.invalid_boxes if b.annotation_id == 99), None)
+    assert box is None
+
+
 def test_flags_negative_coordinates_with_the_right_reason() -> None:
     report = analyze_invalid_boxes(_build_dataset(), CheckConfig(threshold=0, severity="fail"))
     box = next(b for b in report.invalid_boxes if b.annotation_id == NEGATIVE_COORDS_ID)

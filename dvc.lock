@@ -1,0 +1,138 @@
+schema: '2.0'
+stages:
+  hash_images:
+    cmd: PYTHONPATH=quality/src python pipeline/hash_images.py --images 
+      data/raw/images --out reports/image_hashes.json
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 2ae957bda56b5cf9293fd620b781e699.dir
+      size: 229721102
+      nfiles: 690
+    - path: pipeline/hash_images.py
+      hash: md5
+      md5: 0e5d25185d47240f5790f20a4ce97a47
+      size: 2248
+    - path: quality/src/dataset_quality/adapters/phash.py
+      hash: md5
+      md5: 0bd8c3a0cb2c25b728cf7dbcde46860d
+      size: 628
+    outs:
+    - path: reports/image_hashes.json
+      hash: md5
+      md5: 803ed868241598b48b288f525cb53c49
+      size: 44410
+  analyze:
+    cmd: PYTHONPATH=quality/src python pipeline/run_analyzers.py --coco 
+      data/annotations/coco-dataset.json --config quality/quality.yaml --hashes 
+      reports/image_hashes.json --out reports
+    deps:
+    - path: data/annotations/coco-dataset.json
+      hash: md5
+      md5: fb3118e0aaa6aece8b70417d76b8eba7
+      size: 475412
+    - path: pipeline/run_analyzers.py
+      hash: md5
+      md5: bf0476e45304a5a29a4abe232bbfc445
+      size: 6021
+    - path: quality/src/dataset_quality
+      hash: md5
+      md5: 278edc242a0c1f37f0f5132aa3d549a5.dir
+      size: 108404
+      nfiles: 42
+    - path: reports/image_hashes.json
+      hash: md5
+      md5: 803ed868241598b48b288f525cb53c49
+      size: 44410
+    params:
+      quality/quality.yaml:
+        checks:
+          min_images_per_class:
+            threshold: 300
+            min_classes: 2
+            severity: fail
+          small_objects:
+            threshold: 32
+            severity: warn
+          class_imbalance:
+            threshold: 10
+            severity: warn
+          duplicates:
+            threshold: 8
+            severity: warn
+          invalid_boxes:
+            threshold: 0
+            severity: fail
+          spatial_bias:
+            threshold: 0.5
+            severity: warn
+        splits:
+          train: 0.7
+          val: 0.15
+          test: 0.15
+          seed: 42
+    outs:
+    - path: reports/analyzers
+      hash: md5
+      md5: 76e8aec8fe110feb6862378c5a230587.dir
+      size: 3638
+      nfiles: 5
+    - path: reports/metrics.json
+      hash: md5
+      md5: 522c4babad39794da9dee814f7eaa012
+      size: 532
+  release:
+    cmd: PYTHONPATH=quality/src python pipeline/build_release.py --coco 
+      data/annotations/coco-dataset.json --config quality/quality.yaml 
+      --analyzers-dir reports/analyzers --out reports/release.json
+    deps:
+    - path: data/annotations/coco-dataset.json
+      hash: md5
+      md5: fb3118e0aaa6aece8b70417d76b8eba7
+      size: 475412
+    - path: pipeline/build_release.py
+      hash: md5
+      md5: 1aaea323ab5f788d65052325ce2d66cf
+      size: 6778
+    - path: quality/src/dataset_quality
+      hash: md5
+      md5: 278edc242a0c1f37f0f5132aa3d549a5.dir
+      size: 108404
+      nfiles: 42
+    - path: reports/analyzers
+      hash: md5
+      md5: 76e8aec8fe110feb6862378c5a230587.dir
+      size: 3638
+      nfiles: 5
+    params:
+      quality/quality.yaml:
+        checks:
+          min_images_per_class:
+            threshold: 300
+            min_classes: 2
+            severity: fail
+          small_objects:
+            threshold: 32
+            severity: warn
+          class_imbalance:
+            threshold: 10
+            severity: warn
+          duplicates:
+            threshold: 8
+            severity: warn
+          invalid_boxes:
+            threshold: 0
+            severity: fail
+          spatial_bias:
+            threshold: 0.5
+            severity: warn
+        splits:
+          train: 0.7
+          val: 0.15
+          test: 0.15
+          seed: 42
+    outs:
+    - path: reports/release.json
+      hash: md5
+      md5: 5dc536126554e8d9c2775854f7d45eb8
+      size: 19890
