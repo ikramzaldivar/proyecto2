@@ -156,6 +156,24 @@ describe('SPEC-QUALITY-UI-003 — Analyzers', () => {
     );
   });
 
+  it('grafica los pares de duplicados por distancia de pHash', () => {
+    mocks.analyzers = { status: 'success', data: ANALYZERS_FIXTURE };
+    renderPage();
+
+    fireEvent.click(screen.getByRole('tab', { name: /duplicados/i }));
+
+    expect(screen.getByText(/distancia phash por par/i)).toBeInTheDocument();
+  });
+
+  it('grafica las cajas inválidas por motivo', () => {
+    mocks.analyzers = { status: 'success', data: ANALYZERS_FIXTURE };
+    renderPage();
+
+    fireEvent.click(screen.getByRole('tab', { name: /cajas inv/i }));
+
+    expect(screen.getByText(/cajas inválidas por motivo/i)).toBeInTheDocument();
+  });
+
   it('muestra umbral y severidad en las cinco pestañas', () => {
     mocks.analyzers = { status: 'success', data: ANALYZERS_FIXTURE };
     renderPage();
