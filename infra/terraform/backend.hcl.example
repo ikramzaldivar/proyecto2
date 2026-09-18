@@ -1,0 +1,5 @@
+bucket       = "proyecto2-prod-tfstate-595981034933"
+key          = "fargate/terraform.tfstate"
+region       = "us-east-2"
+encrypt      = true
+use_lockfile = true

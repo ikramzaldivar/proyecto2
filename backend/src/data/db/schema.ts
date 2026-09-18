@@ -14,7 +14,7 @@ import {
 
 /**
  * Guarda los metadatos de las imágenes.
- * El archivo real se almacena en MinIO mediante storageKey.
+ * El archivo real se almacena en MinIO o S3 mediante storageKey.
  */
 
 export const images = mysqlTable(

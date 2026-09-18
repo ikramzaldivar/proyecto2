@@ -22,12 +22,18 @@ REQUIRED_CHECKS = frozenset(
 
 
 class CheckConfig(BaseModel):
-    """Umbral y severidad de un check individual, tal como vive en quality.yaml."""
+    """Umbral y severidad de un check individual, tal como vive en quality.yaml.
+
+    min_classes es opcional y solo aplica a min_images_per_class: el
+    requisito real no es "300 imágenes en TODAS las clases" (eso haría
+    fallar el gate por clases pequeñas como dog), sino "300 imágenes en al
+    menos min_classes clases distintas"."""
 
     model_config = ConfigDict(extra="forbid")
 
     threshold: float
     severity: Severity
+    min_classes: int | None = Field(default=None, ge=1)
 
 
 class SplitConfig(BaseModel):
