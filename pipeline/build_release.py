@@ -21,7 +21,6 @@ que no lo hubo.
 
 import argparse
 import json
-import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -32,6 +31,7 @@ from dataset_quality.analyzers.invalid_boxes import InvalidBoxesReport
 from dataset_quality.analyzers.small_objects import SmallObjectsReport
 from dataset_quality.analyzers.spatial_bias import SpatialBiasReport
 from dataset_quality.models.coco import CocoDataset
+from dataset_quality.models.config import PipelineSettings
 from dataset_quality.policy.class_counts import (
     count_distinct_images_before_and_after_duplicates,
 )
@@ -41,8 +41,6 @@ from dataset_quality.splits.generator import generate_splits
 from dataset_quality.splits.report import build_leakage_report, build_split_distribution
 
 SCHEMA_VERSION = 1
-
-DEFAULT_DATASET_VERSION = "v0.0.0-dev"
 
 # El orden importa: es el que espera evaluate_quality_gate() por posicion.
 ANALYZER_MODELS = {
@@ -68,12 +66,8 @@ def load_analyzer_reports(analyzers_dir: Path) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Arma release.json y corre el Quality Gate."
-    )
-    parser.add_argument(
-        "--coco", required=True, type=Path, help="Export COCO del portal"
-    )
+    parser = argparse.ArgumentParser(description="Arma release.json y corre el Quality Gate.")
+    parser.add_argument("--coco", required=True, type=Path, help="Export COCO del portal")
     parser.add_argument("--config", required=True, type=Path, help="quality.yaml")
     parser.add_argument(
         "--analyzers-dir",
@@ -81,18 +75,15 @@ def main() -> None:
         type=Path,
         help="Carpeta con los 5 JSON que escribio la etapa analyze",
     )
-    parser.add_argument(
-        "--out", required=True, type=Path, help="Ruta de salida de release.json"
-    )
+    parser.add_argument("--out", required=True, type=Path, help="Ruta de salida de release.json")
     parser.add_argument(
         "--dataset-version",
-        default=os.environ.get("DATASET_VERSION", DEFAULT_DATASET_VERSION),
-        help=(
-            "Version semantica del dataset. Por defecto toma la variable de entorno "
-            f"DATASET_VERSION, y si tampoco esta, {DEFAULT_DATASET_VERSION}."
-        ),
+        default=None,
+        help="Version semantica del dataset. Si no se pasa, se toma de PipelineSettings.",
     )
     args = parser.parse_args()
+
+    dataset_version = args.dataset_version or PipelineSettings().dataset_version
 
     config = load_quality_config(args.config)
     dataset = CocoDataset.model_validate_json(args.coco.read_text(encoding="utf-8"))
@@ -113,14 +104,12 @@ def main() -> None:
     distribution = build_split_distribution(dataset, assignment)
     leakage = build_leakage_report(dataset, assignment, duplicate_groups, distribution)
 
-    class_counts = count_distinct_images_before_and_after_duplicates(
-        dataset, duplicate_groups
-    )
+    class_counts = count_distinct_images_before_and_after_duplicates(dataset, duplicate_groups)
     reannotation_queue = build_reannotation_queue(reports["invalid_boxes"])
 
     release = {
         "schema_version": SCHEMA_VERSION,
-        "dataset_version": args.dataset_version,
+        "dataset_version": dataset_version,
         "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "seed": config.splits.seed,
         "totals": {
@@ -129,16 +118,11 @@ def main() -> None:
             "categories": len(dataset.categories),
         },
         "categories": [
-            {"id": category.id, "name": category.name}
-            for category in dataset.categories
+            {"id": category.id, "name": category.name} for category in dataset.categories
         ],
         "quality": gate.model_dump(mode="json"),
-        "analyzers": {
-            name: report.model_dump(mode="json") for name, report in reports.items()
-        },
-        "class_counts": [
-            comparison.model_dump(mode="json") for comparison in class_counts
-        ],
+        "analyzers": {name: report.model_dump(mode="json") for name, report in reports.items()},
+        "class_counts": [comparison.model_dump(mode="json") for comparison in class_counts],
         "splits": {
             "seed": config.splits.seed,
             "proportions": {
@@ -150,15 +134,13 @@ def main() -> None:
             "distribution": [entry.model_dump(mode="json") for entry in distribution],
             "leakage": leakage.model_dump(mode="json"),
         },
-        "reannotation_queue": [
-            item.model_dump(mode="json") for item in reannotation_queue
-        ],
+        "reannotation_queue": [item.model_dump(mode="json") for item in reannotation_queue],
     }
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(release, indent=2) + "\n", encoding="utf-8")
 
-    print(f"release {args.dataset_version} -> {args.out}")
+    print(f"release {dataset_version} -> {args.out}")
     print(f"quality gate: {gate.overall_status} (exit code {gate.exit_code})")
     for check in gate.checks:
         if check.status != "pass":

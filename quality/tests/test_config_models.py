@@ -7,6 +7,7 @@ from dataset_quality.adapters.config_loader import load_quality_config
 from dataset_quality.models.config import (
     REQUIRED_CHECKS,
     CheckConfig,
+    PipelineSettings,
     QualityConfig,
     SplitConfig,
 )
@@ -100,3 +101,27 @@ def test_load_quality_config_raises_clear_error_when_file_is_missing(tmp_path: P
     missing_path = tmp_path / "does_not_exist.yaml"
     with pytest.raises(FileNotFoundError, match="does_not_exist.yaml"):
         load_quality_config(missing_path)
+
+
+def test_pipeline_settings_uses_default_dataset_version_when_env_is_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("DATASET_VERSION", raising=False)
+    settings = PipelineSettings(_env_file=None)
+    assert settings.dataset_version == "v0.0.0-dev"
+
+
+def test_pipeline_settings_reads_dataset_version_from_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DATASET_VERSION", "v2.3.0")
+    settings = PipelineSettings(_env_file=None)
+    assert settings.dataset_version == "v2.3.0"
+
+
+def test_pipeline_settings_rejects_a_non_semantic_dataset_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DATASET_VERSION", "latest")
+    with pytest.raises(ValidationError, match="dataset_version"):
+        PipelineSettings(_env_file=None)

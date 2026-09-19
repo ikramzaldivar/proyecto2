@@ -1,6 +1,9 @@
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PIPELINE_VERSION_PATTERN = r"^v\d+\.\d+\.\d+(-[a-z0-9]+)?$"
 
 # "warn" deja pasar el pipeline pero queda visible en el reporte; "fail"
 # termina con exit code distinto de cero y bloquea el release (CAL 08).
@@ -72,3 +75,19 @@ class QualityConfig(BaseModel):
         if missing:
             raise ValueError(f"missing required checks: {sorted(missing)}")
         return self
+
+
+DEFAULT_DATASET_VERSION = "v0.0.0-dev"
+
+
+class PipelineSettings(BaseSettings):
+    """Variables de entorno del pipeline de release. Fail-fast: un valor
+    inválido detiene el proceso con un mensaje claro, en vez de dejar
+    que un DATASET_VERSION mal escrito llegue silenciosamente hasta
+    release.json (ver CAL 00 — nada de leer os.environ suelto fuera de
+    esta capa de configuración). Sin env_prefix: DATASET_VERSION ya se
+    usa así en CI y dvc.yaml, y prefijarlo rompería esa integración."""
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    dataset_version: str = Field(default=DEFAULT_DATASET_VERSION, pattern=PIPELINE_VERSION_PATTERN)
