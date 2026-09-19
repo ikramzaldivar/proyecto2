@@ -1,0 +1,46 @@
+# Se aplica cuando el contexto de build es la raiz del repo (quality/Dockerfile).
+# backend/ y frontend/ construyen con su propio contexto y su propio archivo.
+#
+# Sin esto, cada build de quality copiaria el dataset entero: 690 imagenes,
+# unos 230 MB que la imagen no usa para nada.
+
+.git
+.github
+
+# Dataset y artefactos: los versiona DVC, nunca entran a una imagen.
+data/
+reports/
+.dvc/cache
+.dvc/tmp
+
+# Dependencias y compilados
+node_modules/
+**/node_modules/
+dist/
+build/
+.venv/
+venv/
+*.egg-info/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+*.tfplan
+
+# Entorno y llaves
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
