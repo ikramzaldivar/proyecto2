@@ -11,7 +11,7 @@ Hay tres cosas que perder y las tres se restauran distinto:
 | **Base de datos** (imágenes registradas, anotaciones, categorías) | Volumen `mariadb_data` | RDS `proyecto2-prod-mariadb`, respaldo automático de **1 día** | Dump SQL / snapshot de RDS |
 | **Imágenes del portal** (los archivos que suben los usuarios) | Volumen `minio_data`, bucket `image-annotations` | S3 `proyecto2-prod-images-<cuenta>`, **versionado** | `mc mirror` / `aws s3 sync` o recuperar versión |
 | **Dataset y reportes de calidad** (COCO, imágenes del dataset, `release.json`, `embeddings.json`) | Cache `.dvc/cache` + remoto `dev` (MinIO local) | Remoto DVC `s3://proyecto2-prod-dvc-<cuenta>`, versionado | `dvc pull -r prod` |
-| **Releases aprobados** | — | S3 `proyecto2-prod-releases-<cuenta>` con Object Lock | Copiar del bucket; no se puede borrar ni sobrescribir |
+| **Releases aprobados** | — | S3 `proyecto2-prod-releases-<cuenta>` con Object Lock | Copiar del bucket; protegido contra borrado y sobrescritura normales durante la retención |
 
 La base de datos y las imágenes del portal van juntas: las filas de `images`
 apuntan a llaves de objetos. Respáldalas y restáuralas **del mismo momento**,
@@ -50,8 +50,9 @@ reiniciar desde cero, haz el dump antes.
 
 ### Producción (RDS)
 
-RDS toma un respaldo automático diario y lo conserva **1 día**
-(`backup_retention_period = 1` en `infra/terraform/modules/database/main.tf`).
+RDS toma un respaldo automático diario y lo conserva **1 día** (variable
+`backup_retention_days`, con valor 1 en `infra/terraform/envs/prod/variables.tf`:
+la cuenta está en Free Tier y RDS rechaza un valor mayor).
 Antes de cualquier cambio arriesgado toma un snapshot manual, que no caduca:
 
 ```bash
@@ -92,7 +93,9 @@ dentro de la VPC (una tarea ECS con `execute-command`, no desde tu laptop).
 acuerdo de equipo): retención de 1 día, `deletion_protection = false` y
 `skip_final_snapshot = true`. Si alguien destruye la instancia, no queda
 snapshot final. La recomendación es subir la retención a 7 días y activar
-`deletion_protection`, en un PR aparte.
+`deletion_protection`, en un PR aparte. Subir la retención exige antes cambiar el
+plan de la cuenta de AWS: con Free Tier, `terraform apply` falla aunque se cambie
+el número (ver el comentario de `backup_retention_days`).
 
 ## 2. Imágenes del portal
 
@@ -223,9 +226,13 @@ local: nadie más lo tiene y `docker compose down -v` lo borra.
 ### Releases aprobados
 
 El bucket `proyecto2-prod-releases-<cuenta>` tiene Object Lock en modo
-Governance: lo que se publica ahí no se puede borrar ni modificar dentro del
-periodo de retención, ni por accidente ni a propósito. Es el respaldo
-definitivo de un release; para "restaurarlo" basta copiarlo:
+Governance, con una retención de 90 días por defecto en `envs/prod`
+(`release_retention_days`). Lo que se publica ahí no se puede borrar ni
+sobrescribir mediante operaciones normales durante la retención; solo un usuario
+autorizado con permiso explícito de bypass (`s3:BypassGovernanceRetention`)
+puede omitirla. Protege contra accidentes y borrados normales, pero no es una
+garantía absoluta frente a quien tenga privilegios. Es el respaldo definitivo de
+un release; para "restaurarlo" basta copiarlo:
 
 ```bash
 aws s3 ls s3://proyecto2-prod-releases-$(aws sts get-caller-identity --query Account --output text)/ --recursive
