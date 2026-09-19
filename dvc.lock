@@ -134,8 +134,8 @@ stages:
     outs:
     - path: reports/release.json
       hash: md5
-      md5: 3f07eec1c8be6866d307050da7d89308
-      size: 19890
+      md5: da513805a74302569a3e980b8184f310
+      size: 19886
   embeddings:
     cmd: cd backend && npm run --silent embeddings -- --coco 
       ../data/annotations/coco-dataset.json --output ../reports/embeddings.json 
