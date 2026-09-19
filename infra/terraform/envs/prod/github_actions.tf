@@ -10,6 +10,11 @@
  * without being able to touch the state itself.
  */
 
+locals {
+  github_owner     = split("/", var.github_repository)[0]
+  github_repo_name = split("/", var.github_repository)[1]
+}
+
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -35,7 +40,13 @@ data "aws_iam_policy_document" "github_actions_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:*"]
+      values = [
+        # Formato clasico: repo:owner/name:ref
+        "repo:${var.github_repository}:*",
+        # Formato actual de GitHub: repo:owner@ID/name@ID:ref. Los IDs son
+        # numericos e inmutables; sin esta forma el rol rechaza el token.
+        "repo:${local.github_owner}@*/${local.github_repo_name}@*:*",
+      ]
     }
   }
 }
