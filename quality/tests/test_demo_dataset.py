@@ -6,6 +6,9 @@ from pathlib import Path
 
 import pytest
 
+# La demo no es parte del paquete (ver pipeline/demo/); conftest.py pone pipeline/ en sys.path.
+from demo.synthetic import build_demo_dataset, render_demo_image
+
 from dataset_quality.adapters.config_loader import load_quality_config
 from dataset_quality.adapters.phash import compute_phash
 from dataset_quality.analyzers.class_imbalance import analyze_class_imbalance
@@ -13,7 +16,6 @@ from dataset_quality.analyzers.duplicates import analyze_duplicates
 from dataset_quality.analyzers.invalid_boxes import analyze_invalid_boxes
 from dataset_quality.analyzers.small_objects import analyze_small_objects
 from dataset_quality.analyzers.spatial_bias import analyze_spatial_bias
-from dataset_quality.demo.synthetic import build_demo_dataset, render_demo_image
 from dataset_quality.models.coco import CocoDataset
 from dataset_quality.policy.quality_gate import evaluate_quality_gate
 from dataset_quality.splits.generator import generate_splits

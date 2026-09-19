@@ -1,7 +1,9 @@
 """Genera el dataset sintético de la demo: imágenes JPEG y su COCO.
 
 Esto es ORQUESTACION, no logica de calidad: llama a
-`dataset_quality.demo.synthetic` y escribe el resultado en disco.
+`pipeline/demo/synthetic.py` y escribe el resultado en disco. La demo vive fuera
+del paquete `dataset_quality` a proposito: `dvc.yaml` depende de esa carpeta y
+un cambio en la demo no debe invalidar los artefactos productivos.
 
     PYTHONPATH=quality/src python pipeline/make_demo_dataset.py --out demo
 
@@ -14,7 +16,7 @@ import argparse
 import json
 from pathlib import Path
 
-from dataset_quality.demo.synthetic import build_demo_dataset, render_demo_image
+from demo.synthetic import build_demo_dataset, render_demo_image
 
 
 def main() -> None:
