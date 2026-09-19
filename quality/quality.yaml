@@ -14,6 +14,9 @@ checks:
 
   small_objects:
     threshold: 32 # px — por debajo de esto, la caja se considera "pequeña"
+    max_small_percent: 15 # % de cajas "pequeñas" que se considera excesivo.
+      # El dataset real (689 img) mide 0.41%; 15% da margen amplio antes de
+      # marcar un problema genuino de calidad de anotación.
     severity: warn
 
   class_imbalance:
@@ -30,6 +33,10 @@ checks:
 
   spatial_bias:
     threshold: 0.5
+    max_center_deviation: 0.15 # distancia máxima del centro promedio de las
+      # cajas respecto al centro geométrico (0.5, 0.5) de la imagen. El
+      # dataset real mide ~0.025; 0.15 da margen antes de marcar sesgo
+      # espacial genuino.
     severity: warn
 
 splits:
