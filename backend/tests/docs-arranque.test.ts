@@ -262,7 +262,10 @@ describe('C-03 — un solo comando y una salida sin acceso a los remotos', () =>
       const dir = mkdtempSync(path.join(tmpdir(), 'make-setup-'));
       try {
         // acentos y CRLF, como el .env.example real en un checkout de Windows
-        const template = Buffer.from('# Configuraci\u00f3n: base de datos y calidad\r\nPORT=3000\r\n', 'utf-8');
+        const template = Buffer.from(
+          '# Configuraci\u00f3n: base de datos y calidad\r\nPORT=3000\r\n',
+          'utf-8',
+        );
         writeFileSync(path.join(dir, '.env.example'), template);
 
         const first = spawnSync(python ?? 'python', ['-c', code], { cwd: dir });
