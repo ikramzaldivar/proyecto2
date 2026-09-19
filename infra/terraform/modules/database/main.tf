@@ -30,7 +30,7 @@ resource "aws_db_instance" "app" {
   publicly_accessible    = false
   multi_az               = false
 
-  backup_retention_period    = 1
+  backup_retention_period    = var.backup_retention_days
   auto_minor_version_upgrade = true
   deletion_protection        = false
   skip_final_snapshot        = true
