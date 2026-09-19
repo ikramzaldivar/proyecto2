@@ -22,8 +22,12 @@ EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--images", required=True, type=Path, help="Carpeta con las imagenes")
-    parser.add_argument("--out", required=True, type=Path, help="JSON de salida con los hashes")
+    parser.add_argument(
+        "--images", required=True, type=Path, help="Carpeta con las imagenes"
+    )
+    parser.add_argument(
+        "--out", required=True, type=Path, help="JSON de salida con los hashes"
+    )
     args = parser.parse_args()
 
     if not args.images.is_dir():
@@ -58,7 +62,9 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    print(f"pHash calculado para {len(hashes)} imagenes ({len(failed)} fallidas) -> {args.out}")
+    print(
+        f"pHash calculado para {len(hashes)} imagenes ({len(failed)} fallidas) -> {args.out}"
+    )
 
 
 if __name__ == "__main__":

@@ -32,7 +32,9 @@ from dataset_quality.analyzers.invalid_boxes import InvalidBoxesReport
 from dataset_quality.analyzers.small_objects import SmallObjectsReport
 from dataset_quality.analyzers.spatial_bias import SpatialBiasReport
 from dataset_quality.models.coco import CocoDataset
-from dataset_quality.policy.class_counts import count_distinct_images_before_and_after_duplicates
+from dataset_quality.policy.class_counts import (
+    count_distinct_images_before_and_after_duplicates,
+)
 from dataset_quality.policy.quality_gate import evaluate_quality_gate
 from dataset_quality.policy.reannotation_queue import build_reannotation_queue
 from dataset_quality.splits.generator import generate_splits
@@ -66,8 +68,12 @@ def load_analyzer_reports(analyzers_dir: Path) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Arma release.json y corre el Quality Gate.")
-    parser.add_argument("--coco", required=True, type=Path, help="Export COCO del portal")
+    parser = argparse.ArgumentParser(
+        description="Arma release.json y corre el Quality Gate."
+    )
+    parser.add_argument(
+        "--coco", required=True, type=Path, help="Export COCO del portal"
+    )
     parser.add_argument("--config", required=True, type=Path, help="quality.yaml")
     parser.add_argument(
         "--analyzers-dir",
@@ -75,7 +81,9 @@ def main() -> None:
         type=Path,
         help="Carpeta con los 5 JSON que escribio la etapa analyze",
     )
-    parser.add_argument("--out", required=True, type=Path, help="Ruta de salida de release.json")
+    parser.add_argument(
+        "--out", required=True, type=Path, help="Ruta de salida de release.json"
+    )
     parser.add_argument(
         "--dataset-version",
         default=os.environ.get("DATASET_VERSION", DEFAULT_DATASET_VERSION),
@@ -105,7 +113,9 @@ def main() -> None:
     distribution = build_split_distribution(dataset, assignment)
     leakage = build_leakage_report(dataset, assignment, duplicate_groups, distribution)
 
-    class_counts = count_distinct_images_before_and_after_duplicates(dataset, duplicate_groups)
+    class_counts = count_distinct_images_before_and_after_duplicates(
+        dataset, duplicate_groups
+    )
     reannotation_queue = build_reannotation_queue(reports["invalid_boxes"])
 
     release = {
@@ -119,11 +129,16 @@ def main() -> None:
             "categories": len(dataset.categories),
         },
         "categories": [
-            {"id": category.id, "name": category.name} for category in dataset.categories
+            {"id": category.id, "name": category.name}
+            for category in dataset.categories
         ],
         "quality": gate.model_dump(mode="json"),
-        "analyzers": {name: report.model_dump(mode="json") for name, report in reports.items()},
-        "class_counts": [comparison.model_dump(mode="json") for comparison in class_counts],
+        "analyzers": {
+            name: report.model_dump(mode="json") for name, report in reports.items()
+        },
+        "class_counts": [
+            comparison.model_dump(mode="json") for comparison in class_counts
+        ],
         "splits": {
             "seed": config.splits.seed,
             "proportions": {
@@ -135,7 +150,9 @@ def main() -> None:
             "distribution": [entry.model_dump(mode="json") for entry in distribution],
             "leakage": leakage.model_dump(mode="json"),
         },
-        "reannotation_queue": [item.model_dump(mode="json") for item in reannotation_queue],
+        "reannotation_queue": [
+            item.model_dump(mode="json") for item in reannotation_queue
+        ],
     }
 
     args.out.parent.mkdir(parents=True, exist_ok=True)

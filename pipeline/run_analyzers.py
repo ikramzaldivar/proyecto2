@@ -29,7 +29,9 @@ from dataset_quality.cli import EXIT_CODE_EXECUTION_ERROR
 from dataset_quality.models.coco import CocoDataset
 
 
-def build_image_hashes(dataset: CocoDataset, hashes: dict[str, str]) -> tuple[dict[int, str], int]:
+def build_image_hashes(
+    dataset: CocoDataset, hashes: dict[str, str]
+) -> tuple[dict[int, str], int]:
     """Traduce {ruta relativa -> pHash} a {image_id -> pHash}, que es lo que
     espera `analyze_duplicates`. El `file_name` del COCO puede venir con o sin
     carpeta, asi que se intenta primero la ruta exacta y luego el nombre de
@@ -39,7 +41,9 @@ def build_image_hashes(dataset: CocoDataset, hashes: dict[str, str]) -> tuple[di
     image_hashes: dict[int, str] = {}
     missing = 0
     for image in dataset.images:
-        digest = hashes.get(image.file_name) or by_basename.get(Path(image.file_name).name)
+        digest = hashes.get(image.file_name) or by_basename.get(
+            Path(image.file_name).name
+        )
         if digest is None:
             missing += 1
             continue
@@ -50,10 +54,16 @@ def build_image_hashes(dataset: CocoDataset, hashes: dict[str, str]) -> tuple[di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--coco", required=True, type=Path, help="Export COCO del portal")
+    parser.add_argument(
+        "--coco", required=True, type=Path, help="Export COCO del portal"
+    )
     parser.add_argument("--config", required=True, type=Path, help="quality.yaml")
-    parser.add_argument("--hashes", required=True, type=Path, help="Salida de hash_images.py")
-    parser.add_argument("--out", required=True, type=Path, help="Carpeta base de reportes")
+    parser.add_argument(
+        "--hashes", required=True, type=Path, help="Salida de hash_images.py"
+    )
+    parser.add_argument(
+        "--out", required=True, type=Path, help="Carpeta base de reportes"
+    )
     args = parser.parse_args()
 
     config = load_quality_config(args.config)
@@ -106,7 +116,9 @@ def main() -> None:
         },
         "class_imbalance": {
             "ratio": reports["class_imbalance"].ratio,
-            "classes_below_min_images": len(reports["class_imbalance"].classes_below_min_images),
+            "classes_below_min_images": len(
+                reports["class_imbalance"].classes_below_min_images
+            ),
         },
         "invalid_boxes": {
             "invalid_count": reports["invalid_boxes"].invalid_count,
@@ -127,7 +139,9 @@ def main() -> None:
         json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 
-    print(f"{len(reports)} reportes en {reports_dir} y resumen en {args.out / 'metrics.json'}")
+    print(
+        f"{len(reports)} reportes en {reports_dir} y resumen en {args.out / 'metrics.json'}"
+    )
 
 
 if __name__ == "__main__":

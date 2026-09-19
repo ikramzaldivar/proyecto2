@@ -29,14 +29,13 @@ import sys
 from pathlib import Path
 
 import yaml
-from pydantic import ValidationError
-
 from dataset_quality.adapters.config_loader import load_quality_config
 from dataset_quality.policy.version_registry import (
     VersionsFile,
     build_version_entry,
     register_version,
 )
+from pydantic import ValidationError
 
 RAW_DVC_FILE = Path("data/raw.dvc")
 
@@ -45,7 +44,10 @@ def current_commit() -> str | None:
     """Hash corto del commit de git, o None si no hay git o no es un repo."""
     try:
         result = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
         )
     except (OSError, subprocess.CalledProcessError):
         return None
@@ -69,12 +71,22 @@ def main() -> None:
         "--release", required=True, type=Path, help="release.json de la etapa release"
     )
     parser.add_argument("--config", required=True, type=Path, help="quality.yaml")
-    parser.add_argument("--registry", required=True, type=Path, help="versions.json a actualizar")
+    parser.add_argument(
+        "--registry", required=True, type=Path, help="versions.json a actualizar"
+    )
     parser.add_argument("--version", required=True, help="Version semantica: v1.2.0")
-    parser.add_argument("--commit", default=None, help="Por defecto, git rev-parse --short HEAD")
-    parser.add_argument("--dvc-revision", default=None, help="Por defecto, el md5 de data/raw.dvc")
-    parser.add_argument("--dev-hash", default=None, help="Hash del dataset ya empujado a DEV")
-    parser.add_argument("--prod-hash", default=None, help="Hash del dataset ya empujado a PROD")
+    parser.add_argument(
+        "--commit", default=None, help="Por defecto, git rev-parse --short HEAD"
+    )
+    parser.add_argument(
+        "--dvc-revision", default=None, help="Por defecto, el md5 de data/raw.dvc"
+    )
+    parser.add_argument(
+        "--dev-hash", default=None, help="Hash del dataset ya empujado a DEV"
+    )
+    parser.add_argument(
+        "--prod-hash", default=None, help="Hash del dataset ya empujado a PROD"
+    )
     args = parser.parse_args()
 
     release = json.loads(args.release.read_text(encoding="utf-8"))
@@ -117,7 +129,10 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 raise SystemExit(1) from error
-        print(f"Error: release.json no cumple lo que espera el registro:\n{error}", file=sys.stderr)
+        print(
+            f"Error: release.json no cumple lo que espera el registro:\n{error}",
+            file=sys.stderr,
+        )
         raise SystemExit(1) from error
 
     updated = register_version(registry, entry, minimum)
