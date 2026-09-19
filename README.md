@@ -27,7 +27,7 @@ tienes `make`, sigue [Arranque desde cero](#arranque-desde-cero): son los mismos
 ## Requisitos
 
 - Docker con Compose v2, Git, Python **3.12**, Node 20 o superior.
-- Un shell tipo POSIX: Linux, macOS, WSL o Git Bash en Windows (las etapas de `dvc.yaml` usan `PYTHONPATH=… python`).
+- `make` (opcional: sin él, corre a mano los comandos de [Arranque desde cero](#arranque-desde-cero)). `make setup` y `make demo` no usan comandos de shell POSIX, así que no dependen de Git Bash ni de WSL. `make up` sí: ejecuta `dvc repro`, y las etapas de `dvc.yaml` usan `PYTHONPATH=… python`, que necesita un shell POSIX (Linux, macOS, WSL o Git Bash en Windows).
 - Para `dvc pull -r prod`: credenciales de AWS con lectura sobre el bucket de PROD (`AWS_PROFILE` o variables `AWS_*`). Sin ellas, usa `make demo`.
 
 ## Arranque desde cero
@@ -196,4 +196,4 @@ los recursos en [infra/terraform/README.md](infra/terraform/README.md).
 | `dvc pull` falla con credenciales inválidas | Renueva las credenciales de AWS. Sin acceso al bucket de PROD, usa `make demo`. |
 | Perdí datos o necesito volver a un estado anterior (MariaDB, imágenes, DVC) | Sigue [docs/respaldo-y-restauracion.md](docs/respaldo-y-restauracion.md). |
 | `dvc repro` termina con error en `release` | La compuerta quedó en `fail`. Lee la salida: dice qué check falló y con qué valor. |
-| `make: command not found` (Windows) | Usa Git Bash o WSL, o corre a mano los comandos de [Arranque desde cero](#arranque-desde-cero). |
+| `make: command not found` (Windows) | Instala make (por ejemplo con Chocolatey: `choco install make`) o corre a mano los comandos de [Arranque desde cero](#arranque-desde-cero). |
