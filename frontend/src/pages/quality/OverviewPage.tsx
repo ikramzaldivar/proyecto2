@@ -75,7 +75,6 @@ export function OverviewPage() {
       {resource.status === "empty" && (
         <QualityEmptyState
           message={resource.message ?? "El pipeline todavía no publicó artefactos de calidad."}
-          action={{ label: "Cómo generar los artefactos", to: "/settings" }}
         />
       )}
 
