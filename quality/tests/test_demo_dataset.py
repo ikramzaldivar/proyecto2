@@ -104,19 +104,14 @@ def test_the_demo_release_passes_the_gate(analyzed) -> None:
     assert analyzed["gate"].exit_code == 0
 
 
-def test_there_is_exactly_one_near_duplicate_pair_and_it_is_the_planted_one(
-    demo, analyzed
-) -> None:
+def test_there_is_exactly_one_near_duplicate_pair_and_it_is_the_planted_one(demo, analyzed) -> None:
     dataset = analyzed["dataset"]
     id_of = {image.file_name: image.id for image in dataset.images}
     planted = [spec for spec in demo.images if spec.duplicate_of is not None]
 
     assert len(planted) == 1
     expected = {id_of[planted[0].file_name], id_of[planted[0].duplicate_of]}
-    found = [
-        {pair.image_id_a, pair.image_id_b}
-        for pair in analyzed["duplicates"].pairs
-    ]
+    found = [{pair.image_id_a, pair.image_id_b} for pair in analyzed["duplicates"].pairs]
     assert found == [expected]
 
 

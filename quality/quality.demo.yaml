@@ -1,0 +1,42 @@
+# SOLO DEMO — política para `make demo`. NO es la política del proyecto.
+#
+# El dataset sintético de la demo trae unas 40 imágenes; con el mínimo real del
+# curso (300 imágenes por clase, en quality.yaml) su compuerta fallaría siempre.
+# Aquí el mínimo baja a 10 para que la demo pueda mostrar las seis pantallas con
+# cifras. Todo lo demás es idéntico a quality.yaml.
+#
+# La política que se evalúa y la que edita Settings en la instalación real es
+# quality/quality.yaml. Un release generado con este archivo no cuenta como
+# release del proyecto.
+
+checks:
+  min_images_per_class:
+    threshold: 10
+    min_classes: 2
+    severity: fail
+
+  small_objects:
+    threshold: 32 # px — por debajo de esto, la caja se considera "pequeña"
+    severity: warn
+
+  class_imbalance:
+    threshold: 10 # ratio máximo permitido entre clase mayoritaria/minoritaria
+    severity: warn
+
+  duplicates:
+    threshold: 8 # distancia pHash máxima para considerar "casi duplicada"
+    severity: warn
+
+  invalid_boxes:
+    threshold: 0 # cualquier caja inválida detectada ya es un fail
+    severity: fail
+
+  spatial_bias:
+    threshold: 0.5
+    severity: warn
+
+splits:
+  train: 0.70
+  val: 0.15
+  test: 0.15
+  seed: 42
