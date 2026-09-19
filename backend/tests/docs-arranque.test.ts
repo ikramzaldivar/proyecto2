@@ -132,10 +132,11 @@ describe('C-01 — Copilot y servidor MCP', () => {
   });
 
   it.each(['COPILOT_PROVIDER', 'COPILOT_API_KEY', 'COPILOT_MODEL'])(
-    'documenta %s y está en .env.example',
+    'documenta %s, está en .env.example y el compose se la pasa al backend',
     (variable) => {
       expect(readme).toContain(variable);
       expect(envExample).toContain(variable);
+      expect(read('docker-compose.yml')).toContain(`${variable}: \${${variable}:-`);
     },
   );
 });
@@ -197,12 +198,16 @@ describe('C-03 — un solo comando y una salida sin acceso a los remotos', () =>
   const makefile = read('Makefile');
 
   function recipe(target: string): string[] {
-    const block = makefile.split(new RegExp(`^${target}:.*$`, 'm'))[1] ?? '';
-    return block
+    const lines = (makefile.split(new RegExp(`^${target}:.*$`, 'm'))[1] ?? '')
+      .replace(/\r/g, '')
       .split('\n')
-      .slice(1)
-      .filter((line) => line.startsWith('\t'))
-      .map((line) => line.trim());
+      .slice(1);
+    const steps: string[] = [];
+    for (const line of lines) {
+      if (!line.startsWith('\t')) break;
+      steps.push(line.trim());
+    }
+    return steps;
   }
 
   it('`make up` encadena dvc pull, dvc repro y docker compose up, en ese orden', () => {
@@ -219,7 +224,8 @@ describe('C-03 — un solo comando y una salida sin acceso a los remotos', () =>
     const steps = recipe('demo').join('\n');
 
     expect(steps).toContain('make_demo_dataset.py');
-    expect(steps).toContain('quality.demo.yaml');
+    expect(makefile).toContain('DEMO_POLICY = quality/quality.demo.yaml');
+    expect(steps).toContain('--config $(DEMO_POLICY)');
     expect(steps).toContain('docker compose up --build');
   });
 
