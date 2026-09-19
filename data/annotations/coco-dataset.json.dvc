@@ -1,5 +1,5 @@
 outs:
-- md5: fb3118e0aaa6aece8b70417d76b8eba7
-  size: 475412
+- md5: 72e5f4025c4dbe7eb1e2420a9b4dbf9a
+  size: 474948
   hash: md5
   path: coco-dataset.json

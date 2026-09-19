@@ -6,9 +6,9 @@ stages:
     deps:
     - path: data/raw
       hash: md5
-      md5: 2ae957bda56b5cf9293fd620b781e699.dir
-      size: 229721102
-      nfiles: 690
+      md5: 1fdb1dcea3218ad2fb0edf985984a929.dir
+      size: 229621498
+      nfiles: 689
     - path: pipeline/hash_images.py
       hash: md5
       md5: d4eaef8b479292607038095ea86a3e29
@@ -20,8 +20,8 @@ stages:
     outs:
     - path: reports/image_hashes.json
       hash: md5
-      md5: 803ed868241598b48b288f525cb53c49
-      size: 44410
+      md5: acd9d5b15dbc4a03b46d8fbce259b0ff
+      size: 44301
   analyze:
     cmd: PYTHONPATH=quality/src python pipeline/run_analyzers.py --coco 
       data/annotations/coco-dataset.json --config quality/quality.yaml --hashes 
@@ -29,8 +29,8 @@ stages:
     deps:
     - path: data/annotations/coco-dataset.json
       hash: md5
-      md5: fb3118e0aaa6aece8b70417d76b8eba7
-      size: 475412
+      md5: 72e5f4025c4dbe7eb1e2420a9b4dbf9a
+      size: 474948
     - path: pipeline/run_analyzers.py
       hash: md5
       md5: fecb875cd0a8209b24e695fecdbed5ad
@@ -42,8 +42,8 @@ stages:
       nfiles: 22
     - path: reports/image_hashes.json
       hash: md5
-      md5: 803ed868241598b48b288f525cb53c49
-      size: 44410
+      md5: acd9d5b15dbc4a03b46d8fbce259b0ff
+      size: 44301
     params:
       quality/quality.yaml:
         checks:
@@ -74,12 +74,12 @@ stages:
     outs:
     - path: reports/analyzers
       hash: md5
-      md5: 76e8aec8fe110feb6862378c5a230587.dir
-      size: 3638
+      md5: 5752658d68c0be8e5ca4870ac9c0ee17.dir
+      size: 3485
       nfiles: 5
     - path: reports/metrics.json
       hash: md5
-      md5: 522c4babad39794da9dee814f7eaa012
+      md5: 0673cf08d26b8020e06afca77bfd4bf8
       size: 532
   release:
     cmd: PYTHONPATH=quality/src python pipeline/build_release.py --coco 
@@ -88,8 +88,8 @@ stages:
     deps:
     - path: data/annotations/coco-dataset.json
       hash: md5
-      md5: fb3118e0aaa6aece8b70417d76b8eba7
-      size: 475412
+      md5: 72e5f4025c4dbe7eb1e2420a9b4dbf9a
+      size: 474948
     - path: pipeline/build_release.py
       hash: md5
       md5: e3c65417d15d18c5f3ddc85501838ac7
@@ -101,8 +101,8 @@ stages:
       nfiles: 22
     - path: reports/analyzers
       hash: md5
-      md5: 76e8aec8fe110feb6862378c5a230587.dir
-      size: 3638
+      md5: 5752658d68c0be8e5ca4870ac9c0ee17.dir
+      size: 3485
       nfiles: 5
     params:
       quality/quality.yaml:
@@ -134,8 +134,8 @@ stages:
     outs:
     - path: reports/release.json
       hash: md5
-      md5: da513805a74302569a3e980b8184f310
-      size: 19886
+      md5: 7975c619c6b2dc99ba4a052f70d522b0
+      size: 19513
   embeddings:
     cmd: cd backend && npm run --silent embeddings -- --coco 
       ../data/annotations/coco-dataset.json --output ../reports/embeddings.json 
@@ -151,10 +151,10 @@ stages:
       size: 2394
     - path: data/annotations/coco-dataset.json
       hash: md5
-      md5: fb3118e0aaa6aece8b70417d76b8eba7
-      size: 475412
+      md5: 72e5f4025c4dbe7eb1e2420a9b4dbf9a
+      size: 474948
     outs:
     - path: reports/embeddings.json
       hash: md5
-      md5: 240979eea0379b854de0f99f87bb72c8
-      size: 156573
+      md5: d20f9f58f545aff70c585a960721207c
+      size: 156306
