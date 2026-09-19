@@ -176,3 +176,34 @@ def test_cli_fails_clearly_when_an_image_file_is_missing(tmp_path: Path) -> None
 
     assert process.returncode not in (0, 1)  # distinto de un resultado de gate normal
     assert "missing.png" in process.stderr
+
+def test_cli_exits_with_code_2_and_no_traceback_on_malformed_coco(tmp_path: Path) -> None:
+    # C-11: un COCO malformado (bbox con menos de 4 elementos, campos
+    # requeridos faltantes) debe reportarse como error de EJECUCIÓN
+    # (exit code 2), legible y sin traceback de Pydantic -- nunca
+    # confundido con el exit code 1 de "el gate corrió y el dataset
+    # falló una regla real".
+    coco_path = tmp_path / "dataset.json"
+    config_path = tmp_path / "quality.yaml"
+    images_dir = tmp_path / "images"
+    images_dir.mkdir()
+
+    coco_path.write_text(
+        json.dumps(
+            {
+                "images": [],
+                "categories": [],
+                "annotations": [
+                    {"id": 1, "image_id": 999, "category_id": 1, "bbox": [1, 2, 3]}
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_quality_config(config_path, min_images_threshold=1)
+
+    process = _run_cli(coco_path, config_path, images_dir)
+
+    assert process.returncode == 2
+    assert "Traceback" not in process.stderr
+    assert "bbox" in process.stderr

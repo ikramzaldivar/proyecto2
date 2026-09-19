@@ -3,6 +3,8 @@ import json
 import sys
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from dataset_quality.adapters.config_loader import load_quality_config
 from dataset_quality.adapters.phash import compute_phash
 from dataset_quality.analyzers.class_imbalance import analyze_class_imbalance
@@ -40,6 +42,28 @@ def _compute_image_hashes(dataset: CocoDataset, images_dir: Path) -> dict[int, s
     return hashes
 
 
+def _load_dataset(coco_path: Path) -> CocoDataset | None:
+    """Carga y valida el COCO. Devuelve None (en vez de dejar escapar el
+    traceback de Pydantic) si el archivo no existe, no es JSON válido, o
+    no cumple el esquema — para que main() pueda reportar el error con
+    un mensaje legible y un exit code distinto del 1 (que significa "el
+    Quality Gate corrió bien y el dataset falló una regla de calidad
+    real"). Mismo patrón que _compute_image_hashes."""
+    try:
+        with coco_path.open("r", encoding="utf-8") as file:
+            raw_coco = json.load(file)
+        return CocoDataset.model_validate(raw_coco)
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"Error: no se pudo leer '{coco_path}': {error}", file=sys.stderr)
+        return None
+    except ValidationError as error:
+        print(f"Error: el COCO en '{coco_path}' no es válido:", file=sys.stderr)
+        for issue in error.errors():
+            field = ".".join(str(part) for part in issue["loc"])
+            print(f"  - {field}: {issue['msg']}", file=sys.stderr)
+        return None
+
+
 def run_quality_gate(
     coco_path: Path, quality_config_path: Path, images_dir: Path, output_path: Path | None
 ) -> int:
@@ -48,9 +72,9 @@ def run_quality_gate(
     reporte, y devuelve el exit code."""
     config = load_quality_config(quality_config_path)
 
-    with coco_path.open("r", encoding="utf-8") as file:
-        raw_coco = json.load(file)
-    dataset = CocoDataset.model_validate(raw_coco)
+    dataset = _load_dataset(coco_path)
+    if dataset is None:
+        return EXIT_CODE_EXECUTION_ERROR
 
     image_hashes = _compute_image_hashes(dataset, images_dir)
     if image_hashes is None:
