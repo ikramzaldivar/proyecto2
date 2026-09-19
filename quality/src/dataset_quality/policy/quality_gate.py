@@ -1,3 +1,4 @@
+import math
 from typing import Literal
 
 from pydantic import BaseModel
@@ -139,16 +140,21 @@ def evaluate_quality_gate(
     )
 
     small_config = config.checks["small_objects"]
+    small_objects_triggered = (
+        small_config.max_small_percent is not None
+        and small_objects.small_percent > small_config.max_small_percent
+    )
     checks.append(
         CheckResult(
             name="small_objects",
-            status="pass",
+            status=_status_for(small_objects_triggered, small_config.severity),
             severity=small_config.severity,
             threshold=small_config.threshold,
             observed={
                 "small_percent": small_objects.small_percent,
                 "percent_by_category": small_objects.percent_by_category,
                 "most_affected_category_id": small_objects.most_affected_category_id,
+                "max_small_percent": small_config.max_small_percent,
             },
             samples=[
                 sample.model_dump() for sample in small_objects.offending_samples[:MAX_SAMPLES]
@@ -157,10 +163,18 @@ def evaluate_quality_gate(
     )
 
     spatial_config = config.checks["spatial_bias"]
+    center_deviation = math.sqrt(
+        (spatial_bias.global_stats.mean_x - 0.5) ** 2
+        + (spatial_bias.global_stats.mean_y - 0.5) ** 2
+    )
+    spatial_bias_triggered = (
+        spatial_config.max_center_deviation is not None
+        and center_deviation > spatial_config.max_center_deviation
+    )
     checks.append(
         CheckResult(
             name="spatial_bias",
-            status="pass",
+            status=_status_for(spatial_bias_triggered, spatial_config.severity),
             severity=spatial_config.severity,
             threshold=spatial_config.threshold,
             observed={
@@ -169,6 +183,8 @@ def evaluate_quality_gate(
                     str(category_id): stats.model_dump()
                     for category_id, stats in spatial_bias.stats_by_category.items()
                 },
+                "center_deviation": center_deviation,
+                "max_center_deviation": spatial_config.max_center_deviation,
             },
             samples=[],
         )

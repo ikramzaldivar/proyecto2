@@ -27,13 +27,22 @@ class CheckConfig(BaseModel):
     min_classes es opcional y solo aplica a min_images_per_class: el
     requisito real no es "300 imágenes en TODAS las clases" (eso haría
     fallar el gate por clases pequeñas como dog), sino "300 imágenes en al
-    menos min_classes clases distintas"."""
+    menos min_classes clases distintas".
+
+    max_small_percent (solo small_objects) y max_center_deviation (solo
+    spatial_bias) son opcionales: definen "cuánto es demasiado" -- un
+    umbral de RESULTADO, distinto del threshold de cada check, que define
+    "qué es pequeño" (px) o no aplica (spatial_bias no tiene threshold de
+    resultado propio hoy). Sin ellos, el check queda informativo, tal como
+    hasta ahora (C-13)."""
 
     model_config = ConfigDict(extra="forbid")
 
     threshold: float
     severity: Severity
     min_classes: int | None = Field(default=None, ge=1)
+    max_small_percent: float | None = Field(default=None, ge=0, le=100)
+    max_center_deviation: float | None = Field(default=None, ge=0)
 
 
 class SplitConfig(BaseModel):

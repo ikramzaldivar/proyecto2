@@ -205,3 +205,42 @@ def test_small_objects_and_spatial_bias_report_full_stats_without_blocking() -> 
     assert spatial_bias_check.status == "pass"
     assert "global_stats" in spatial_bias_check.observed
     assert "stats_by_category" in spatial_bias_check.observed
+
+
+def test_small_objects_produces_warn_when_max_percent_is_configured_and_exceeded() -> None:
+    # C-13: max_small_percent es opcional; si está configurado y se supera,
+    # el check debe dispararse -- ya no queda fijo en "pass".
+    config_dict = _base_config(min_images_threshold=2)
+    config_dict["checks"]["small_objects"]["max_small_percent"] = 10
+    config = QualityConfig.model_validate(config_dict)
+
+    result = _run_gate(_clean_dataset(), config)  # todas las cajas son 20x20, < 32px
+
+    small_objects_check = next(c for c in result.checks if c.name == "small_objects")
+    assert small_objects_check.status == "warn"
+    assert result.overall_status == "pass"
+    assert result.exit_code == 0
+
+
+def test_small_objects_blocks_the_release_when_severity_is_fail() -> None:
+    config_dict = _base_config(min_images_threshold=2)
+    config_dict["checks"]["small_objects"]["max_small_percent"] = 10
+    config_dict["checks"]["small_objects"]["severity"] = "fail"
+    config = QualityConfig.model_validate(config_dict)
+
+    result = _run_gate(_clean_dataset(), config)
+
+    small_objects_check = next(c for c in result.checks if c.name == "small_objects")
+    assert small_objects_check.status == "fail"
+    assert result.overall_status == "fail"
+    assert result.exit_code != 0
+
+
+def test_small_objects_stays_informational_without_a_configured_max_percent() -> None:
+    # Sin max_small_percent en el YAML (caso de hoy en quality.yaml real),
+    # el check sigue siendo puramente informativo -- no rompe nada existente.
+    config = QualityConfig.model_validate(_base_config(min_images_threshold=2))
+    result = _run_gate(_clean_dataset(), config)  # mismas cajas pequeñas de arriba
+
+    small_objects_check = next(c for c in result.checks if c.name == "small_objects")
+    assert small_objects_check.status == "pass"
