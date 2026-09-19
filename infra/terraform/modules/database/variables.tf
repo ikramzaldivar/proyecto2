@@ -30,3 +30,14 @@ variable "db_username" {
   type        = string
   default     = "proyecto2_admin"
 }
+
+variable "backup_retention_days" {
+  description = "Days RDS keeps automated backups. 1 is the bare minimum; 7 gives a week to notice a bad write."
+  type        = number
+  default     = 7
+
+  validation {
+    condition     = var.backup_retention_days >= 1 && var.backup_retention_days <= 35
+    error_message = "backup_retention_days must be between 1 and 35."
+  }
+}

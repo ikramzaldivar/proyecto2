@@ -47,6 +47,8 @@ module "database" {
   instance_class    = var.db_instance_class
   db_name           = var.db_name
   db_username       = var.db_username
+
+  backup_retention_days = var.backup_retention_days
 }
 
 module "service" {
