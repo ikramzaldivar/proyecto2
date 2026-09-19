@@ -174,6 +174,16 @@ describe('SPEC-QUALITY-UI-003 — Analyzers', () => {
     expect(screen.getByText(/cajas inválidas por motivo/i)).toBeInTheDocument();
   });
 
+  it('grafica el sesgo espacial con un scatter de centros', () => {
+    mocks.analyzers = { status: 'success', data: ANALYZERS_FIXTURE };
+    renderPage();
+
+    fireEvent.click(screen.getByRole('tab', { name: /sesgo espacial/i }));
+
+    const scatter = screen.getByTestId('spatial-scatter');
+    expect(scatter.tagName.toLowerCase()).toBe('svg');
+  });
+
   it('muestra umbral y severidad en las cinco pestañas', () => {
     mocks.analyzers = { status: 'success', data: ANALYZERS_FIXTURE };
     renderPage();
