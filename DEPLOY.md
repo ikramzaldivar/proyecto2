@@ -54,8 +54,10 @@ docker push "$REGISTRY/proyecto2-prod-frontend:$TAG"
 
 ## 2. Desplegar
 
+Terraform tiene dos raíces, `infra/terraform/envs/dev` y `infra/terraform/envs/prod`, y **solo `prod` está aplicada**: no corras un `apply` en `dev`. Los módulos compartidos viven en `infra/terraform/modules/`.
+
 ```bash
-cd infra/terraform
+cd infra/terraform/envs/prod
 echo "container_image_tag = \"$TAG\"" > terraform.tfvars
 
 terraform init -backend-config=backend.hcl.example
@@ -75,7 +77,7 @@ aws ecs describe-services --cluster proyecto2-prod --services frontend backend \
   --query 'services[].{service:serviceName,running:runningCount,desired:desiredCount}' \
   --output table
 
-curl -s "$(terraform output -raw application_url)/api/health"
+curl -s "$(terraform -chdir=infra/terraform/envs/prod output -raw application_url)/api/health"
 ```
 
 `running` debe igualar a `desired` en ambos, y `/api/health` responder `{"status":"ok","database":"connected"}`.
@@ -94,7 +96,7 @@ aws ecr describe-images --repository-name proyecto2-prod-backend \
   --query 'sort_by(imageDetails,&imagePushedAt)[-10:].imageTags' --output text
 ```
 
-Pones la etiqueta anterior en `terraform.tfvars` y repites el paso 2.
+Pones la etiqueta anterior en `infra/terraform/envs/prod/terraform.tfvars` y repites el paso 2.
 
 ## 5. Cuando falla
 
