@@ -1,324 +1,197 @@
-# Portal de anotación de imágenes
+# Calidad y versionado de datasets (Proyecto 2)
 
-Monolito para subir, anotar y exportar un dataset de detección de objetos.
-Las imágenes se almacenan en MinIO; los metadatos y las anotaciones en MariaDB.
+Un **dataset COCO versionado y liberable**. Parte del COCO que produjo el Proyecto 1 (el portal de
+anotación, ahora en [docs/portal-mp1.md](docs/portal-mp1.md)), lo somete a analizadores de calidad y a
+una compuerta que puede **bloquear el release**, lo divide en train/val/test de forma reproducible y lo
+versiona con DVC. Encima hay una aplicación web de seis pantallas, un Dataset Copilot (servidor MCP más
+agente de solo lectura) y la infraestructura en Terraform.
 
-## Estructura
+| Tier | Qué hace | Dónde vive |
+|---|---|---|
+| 1. Ingesta | COCO crudo del Proyecto 1, con volumen real de anotación | `data/` (versionado con DVC) |
+| 2. Analizadores | Objetos pequeños, desbalance, duplicados por pHash, cajas inválidas, sesgo espacial | `quality/src/dataset_quality/analyzers/` |
+| 3. Compuerta | `quality.yaml` con severidad `warn` / `fail`; un `fail` bloquea el release | `quality/quality.yaml`, `policy/quality_gate.py` |
+| 4. Split | train/val/test estratificado, reproducible por semilla, sin fuga | `quality/src/dataset_quality/splits/` |
+| 5. Versionado | Pipeline de DVC, remotos DEV (MinIO) y PROD (S3), releases con versión semántica | `dvc.yaml`, `reports/versions.json` |
 
-```text
-backend/    API HTTP con Express (UI → Logic → Data)
-frontend/   Interfaz React + Vite (upload, anotación, dashboard, búsqueda)
+**Para levantar todo:**
+
+```bash
+make setup   # una sola vez: dependencias
+make up      # dvc pull -r prod → dvc repro → docker compose up --build
 ```
 
-Cada carpeta es un paquete npm independiente con su propio `package.json`.
-
-## Arquitectura
-
-```text
-frontend  →  backend
-                ├── src/ui      Endpoints HTTP
-                ├── src/logic   Reglas de negocio y validación con Zod
-                └── src/data    Drizzle (MariaDB) y MinIO
-                                    ├── MariaDB  metadatos y anotaciones
-                                    └── MinIO    archivos binarios
-```
-
-La capa UI nunca accede a MariaDB ni a MinIO: solo invoca a `logic`. La capa
-`logic` es la única que puede importar de `data`.
-
-Todo dato que entra por HTTP se valida con Zod antes de llegar a la capa de
-datos, y los tipos se infieren del esquema con `z.infer`. La capa Logic lanza
-errores tipados que la UI mapea a códigos HTTP:
-
-| Error             | HTTP | Cuándo                                       |
-|-------------------|------|----------------------------------------------|
-| `ValidationError` | 400  | Dato mal formado o regla de negocio violada  |
-| `NotFoundError`   | 404  | El recurso no existe en la base de datos     |
+Luego abre <http://localhost:8080/overview>. Sin acceso a los remotos de DVC, usa `make demo`. Si no
+tienes `make`, sigue [Arranque desde cero](#arranque-desde-cero): son los mismos comandos, uno por uno.
 
 ## Requisitos
 
-- Docker y Docker Compose
+- Docker con Compose v2, Git, Python **3.12**, Node 20 o superior.
+- Un shell tipo POSIX: Linux, macOS, WSL o Git Bash en Windows (las etapas de `dvc.yaml` usan `PYTHONPATH=… python`).
+- Para `dvc pull -r prod`: credenciales de AWS con lectura sobre el bucket de PROD (`AWS_PROFILE` o variables `AWS_*`). Sin ellas, usa `make demo`.
 
-## Despliegue con un solo comando
+## Arranque desde cero
+
+Cada comando se puede copiar y pegar tal cual, en este orden.
+
+**1. Clonar y configurar el entorno**
+
+```bash
+git clone https://github.com/ikramzaldivar/proyecto2.git && cd proyecto2
+cp .env.example .env
+```
+
+`.env.example` trae valores de desarrollo que ya funcionan con `docker compose`; no hay que editar nada
+para arrancar.
+
+**2. Instalar dependencias**
+
+```bash
+pip install -e "quality/[dev]"
+pip install "dvc[s3]"
+npm --prefix backend ci
+npm --prefix frontend ci
+```
+
+El paquete de `quality/` lo usan las etapas de DVC; `backend/` se necesita porque la etapa `embeddings`
+del pipeline corre en Node.
+
+**3. Traer los datos y regenerar los artefactos**
+
+```bash
+export AWS_PROFILE=<tu-perfil>   # credenciales con lectura sobre el bucket de PROD
+dvc pull -r prod
+dvc repro
+```
+
+`dvc pull -r prod` descarga las imágenes y el COCO (`data/raw`, `data/annotations`). `dvc repro` corre el
+pipeline y escribe en `reports/` los archivos que lee el portal: `release.json`, `embeddings.json` y los
+reportes de cada analizador. Este paso **no se puede saltar**: esos archivos son **salidas del pipeline**
+y no van en git, así que sin correrlo las seis pantallas de calidad arrancan en «Sin datos».
+
+Si `dvc repro` termina con error, la compuerta de calidad quedó en `fail` y el release **no** se generó
+(es lo esperado: ver [Compuerta](#compuerta-de-calidad-y-pipeline)).
+
+**4. Levantar la aplicación**
 
 ```bash
 docker compose up --build
 ```
 
-Este comando levanta los cuatro servicios (MariaDB, MinIO, backend y
-frontend). El backend espera a que MariaDB y MinIO estén listos, aplica las
-migraciones y siembra datos de ejemplo automáticamente antes de arrancar; no
-hace falta ejecutar ningún paso manual.
+Levanta MariaDB, MinIO, el backend y el frontend. Cuando termine de construir, abre las pantallas de la
+siguiente tabla.
 
-| Servicio        | URL                              |
-|-----------------|-----------------------------------|
-| Frontend        | http://localhost:8080            |
-| Backend (API)   | http://localhost:3100            |
-| Consola MinIO   | http://localhost:9001 (minioadmin/minioadmin) |
-
-Para apagar todo y borrar los datos persistidos (MariaDB y MinIO):
+**Sin acceso a los remotos de DVC**
 
 ```bash
-docker compose down -v
+make demo
 ```
 
-Las credenciales de MariaDB/MinIO usadas en `docker-compose.yml` son las de
-desarrollo del proyecto; para un despliegue real, cámbialas ahí antes de
-publicar los puertos a una red no confiable.
+Genera un dataset **sintético** (~40 imágenes, en `demo/`, ignorado por git), corre sobre él el mismo
+pipeline con una política más laxa (`quality/quality.demo.yaml`, marcada *SOLO DEMO*) y levanta la app
+apuntando a esos artefactos. Sirve para ver las seis pantallas con cifras; **no** es un release del
+proyecto.
 
-## Desarrollo local sin Docker para las apps
+## Rutas de la aplicación
 
-Para iterar con hot reload en backend y frontend, puedes levantar solo la
-infraestructura con Docker y correr los paquetes Node directamente en tu
-máquina:
+El frontend se sirve en <http://localhost:8080>; el backend, en <http://localhost:3100>.
 
-### 1. Infraestructura
+| Ruta | Pantalla | Qué muestra |
+|---|---|---|
+| `/overview` | Overview | Imágenes, cajas, categorías, checks fallidos y estado de la compuerta |
+| `/analyzers` | Analyzers | Cinco pestañas: objetos pequeños, desbalance, duplicados, cajas inválidas, sesgo espacial |
+| `/splits` | Splits | Distribución de clases por split y resultado del chequeo de fuga |
+| `/versions` | Versions | Línea de tiempo de versiones, diff entre dos y estado DEV / PROD |
+| `/settings` | Settings | Edita los umbrales de `quality.yaml`; el cambio persiste y aplica en la siguiente corrida |
+| `/copilot` | Copilot | Preguntas sobre el dataset, con las tool calls y la versión citada |
+| `/analytics` | Analytics | PCA precomputado offline; hover muestra la imagen y el filtro por clase corre en el navegador |
+
+Las rutas del portal del Proyecto 1 (`/dashboard`, `/upload`, `/search`) siguen disponibles; están
+descritas en [docs/portal-mp1.md](docs/portal-mp1.md).
+
+## Compuerta de calidad y pipeline
+
+`dvc.yaml` define cuatro etapas encadenadas; `dvc repro` solo rehace las que cambiaron:
+
+| Etapa | Entrada | Salida |
+|---|---|---|
+| `hash_images` | `data/raw` | `reports/image_hashes.json` (pHash de cada imagen) |
+| `analyze` | COCO, hashes, `quality/quality.yaml` | `reports/analyzers/`, `reports/metrics.json` |
+| `embeddings` | COCO | `reports/embeddings.json` (PCA offline) |
+| `release` | COCO, analizadores | `reports/release.json`: compuerta, splits y fuga |
+
+La política vive en [`quality/quality.yaml`](quality/quality.yaml): umbral y severidad por check. El mínimo del
+curso es **300 imágenes por clase en al menos 2 clases**, con severidad `fail`. Un `fail` termina la etapa
+`release` con código de salida distinto de cero, DVC no registra el release y la promoción se detiene.
+
+## Versiones y releases
+
+`reports/versions.json` es el historial de releases (sí se versiona en git). Para cortar una versión:
 
 ```bash
-docker run --name proyecto1-mariadb \
-  -e MARIADB_ROOT_PASSWORD=password \
-  -e MARIADB_DATABASE=image_repo \
-  -p 3306:3306 -d mariadb:11
-
-docker run --name proyecto1-minio \
-  -p 9000:9000 -p 9001:9001 \
-  -e MINIO_ROOT_USER=minioadmin \
-  -e MINIO_ROOT_PASSWORD=minioadmin \
-  -d quay.io/minio/minio server /data --console-address ":9001"
+DATASET_VERSION=v1.1.0 dvc repro -f release
+PYTHONPATH=quality/src python pipeline/register_version.py \
+  --release reports/release.json --config quality/quality.yaml \
+  --registry reports/versions.json --version v1.1.0
 ```
 
-El bucket se crea automáticamente al arrancar el backend.
+Exige versión semántica (`vX.Y.Z`) y **no registra** un release cuya compuerta quedó en `fail`. Con
+`--dev-hash` y `--prod-hash` se marca la versión como empujada a cada remoto una vez hecho el `dvc push`.
 
-### 2. Backend
+## Dataset Copilot y servidor MCP
 
-```bash
-cd backend
-npm ci
-cp ../.env.example .env
-npm run db:migrate
-npm run db:seed
-npm run dev
-```
-
-Queda escuchando en `http://localhost:3000`.
-
-Si el puerto 3306 ya está ocupado en tu máquina, publica MariaDB en otro
-puerto (por ejemplo `-p 3307:3306`) y ajusta `DATABASE_URL` en `backend/.env`.
-Nada está fijo en el código: puertos, credenciales y bucket salen del `.env`.
-
-### 3. Frontend
-
-```bash
-cd frontend
-npm ci
-cp .env.example .env
-npm run dev
-```
-
-Queda escuchando en `http://localhost:5173` y consume la API del backend a
-través del proxy `/api` configurado en `vite.config.ts`.
-
-### 4. Comprobación
-
-```bash
-curl http://localhost:3000/health
-```
-
-Respuesta esperada:
-
-```json
-{"status":"ok","database":"connected","timestamp":"..."}
-```
-
-## Producción
-
-La forma recomendada de desplegar es `docker compose up --build` (ver
-[Despliegue con un solo comando](#despliegue-con-un-solo-comando)): construye
-las imágenes de backend y frontend y levanta MariaDB y MinIO junto con ellas.
-
-Si necesitas correr el backend fuera de Docker contra tu propia
-infraestructura:
+El Copilot responde preguntas sobre el dataset usando **herramientas de solo lectura** (9 en total) y las
+cifras salen siempre de esas herramientas, nunca del modelo. Cada respuesta cita la versión consultada y
+las herramientas usadas. Además de la pantalla `/copilot`:
 
 ```bash
 cd backend
-npm run build
-npm run start:prod
+npm run copilot:demo   # hace preguntas de ejemplo contra los artefactos de reports/
+npm run mcp            # servidor MCP por stdio (initialize, tools/list, tools/call)
 ```
 
-El servidor de producción escucha en `http://localhost:3100`. El script usa
-`cross-env`, por lo que funciona igual en Windows, macOS y Linux.
+| Variable | Para qué sirve | Por defecto |
+|---|---|---|
+| `QUALITY_ARTIFACTS_DIR` | Carpeta con `release.json`, `versions.json` y `embeddings.json` | `../reports` |
+| `COPILOT_PROVIDER` | `none`, `anthropic` o `mistral` | `none` |
+| `COPILOT_API_KEY` | Clave del proveedor (nunca se versiona; va en `.env`) | vacía |
+| `COPILOT_MODEL` | Modelo del proveedor; vacío usa el modelo por defecto | vacío |
 
-La plantilla `.env.production.example` contiene la configuración de
-producción, con `PORT=3100`.
+Con `COPILOT_PROVIDER=none`, o si el proveedor no responde, el Copilot contesta en modo **anclado**: solo
+con las cifras que devolvieron las herramientas.
 
-## Variables de entorno
-
-Se copian de `.env.example`. Ningún valor real se versiona: `.gitignore`
-ignora todo `.env*` salvo las plantillas de ejemplo.
-
-| Variable                | Propósito                                      |
-|-------------------------|------------------------------------------------|
-| `PORT`                  | Puerto HTTP (3000 desarrollo, 3100 producción) |
-| `DATABASE_URL`          | Cadena de conexión a MariaDB                   |
-| `MINIO_ENDPOINT`        | Host de MinIO                                  |
-| `MINIO_PORT`            | Puerto de la API de MinIO                      |
-| `MINIO_USE_SSL`         | `true` o `false`                               |
-| `MINIO_ACCESS_KEY`      | Credencial de acceso                           |
-| `MINIO_SECRET_KEY`      | Credencial secreta                             |
-| `MINIO_BUCKET`          | Bucket donde se guardan las imágenes           |
-| `MAX_UPLOAD_SIZE_BYTES` | Tamaño máximo por imagen (5 MiB por defecto)   |
-
-## API
-
-| Método | Ruta                        | Descripción                                 |
-|--------|-----------------------------|---------------------------------------------|
-| GET    | `/health`                   | Estado del servicio y de la base de datos   |
-| POST   | `/images`                   | Sube una imagen (`multipart/form-data`)     |
-| GET    | `/images/search`            | Búsqueda con filtros y paginación           |
-| DELETE | `/images/:id`               | Elimina imagen, binario y anotaciones       |
-| GET    | `/images/:id/file`          | Sirve el binario desde MinIO                |
-| PATCH  | `/images/:id/status`        | Transiciona el estado de anotación          |
-| GET    | `/images/:id/annotations`   | Cajas de una imagen, con su categoría       |
-| POST   | `/images/:id/annotations`   | Crea una bounding box                       |
-| PATCH  | `/annotations/:id`          | Mueve, redimensiona o reclasifica una caja  |
-| DELETE | `/annotations/:id`          | Elimina una caja                            |
-| GET    | `/categories`               | Categorías disponibles con su color         |
-| GET    | `/dashboard/summary`        | Métricas calculadas en SQL                  |
-| GET    | `/export/coco`              | Descarga el dataset en formato COCO         |
-
-### Búsqueda
-
-`GET /images/search` acepta:
-
-| Query param         | Descripción                                                |
-|---------------------|------------------------------------------------------------|
-| `q`                 | Clases con operadores, ej. `car AND person`, `car OR dog`   |
-| `categories`        | Ids de categoría separados por coma                        |
-| `status`            | `pending`, `in_progress`, `completed` (separados por coma)  |
-| `dateFrom`/`dateTo` | Rango sobre la fecha de subida                             |
-| `page`/`pageSize`   | Paginación                                                 |
-
-Los operadores se resuelven con subconsultas `EXISTS` en SQL, nunca filtrando
-en memoria. Con `AND` la imagen debe contener todas las clases; con `OR`, al
-menos una. Mezclar `AND` con `OR` devuelve `400`, porque la precedencia
-sería ambigua.
+## Pruebas y calidad de código
 
 ```bash
-curl "http://localhost:3000/images/search?q=car%20AND%20person&status=pending&page=1&pageSize=24"
+cd quality && pytest && ruff check . && cd ..   # pipeline de calidad (Python)
+npm --prefix backend test                        # API, Copilot y servidor MCP
+npm --prefix frontend test                       # pantallas
 ```
 
-### Exportación COCO
+El proyecto se desarrolla con TDD: en el historial cada cambio alterna commits `test(...) en rojo` y
+`feat(...) (GREEN)`. GitHub Actions corre Ruff, pytest y Terraform en cada PR.
 
-```bash
-curl -O -J http://localhost:3000/export/coco
-```
+## Infraestructura y despliegue
 
-```json
-{
-  "images":      [{ "id", "file_name", "width", "height" }],
-  "annotations": [{ "id", "image_id", "category_id",
-                    "bbox": [x, y, width, height],
-                    "area", "iscrowd", "segmentation" }],
-  "categories":  [{ "id", "name" }]
-}
-```
+Terraform vive en `infra/terraform/`: módulos reutilizables en `modules/` y una raíz por ambiente en
+`envs/dev` y `envs/prod` (solo `prod` está aplicada). GitHub Actions se autentica con OIDC, sin llaves
+estáticas. El procedimiento de despliegue y el diagnóstico están en [DEPLOY.md](DEPLOY.md) y el detalle de
+los recursos en [infra/terraform/README.md](infra/terraform/README.md).
 
-El `bbox` va en píxeles absolutos, `area` es coherente con `width × height`,
-e `iscrowd` siempre está presente. Los `id` son consistentes entre las tres
-secciones.
+## Documentación
 
-## Calidad
+- [docs/portal-mp1.md](docs/portal-mp1.md): el portal de anotación del Proyecto 1 (antecedente).
+- [docs/frente3-quality-api.md](docs/frente3-quality-api.md): endpoints `/quality/*`, contrato de artefactos y variables.
+- [DEPLOY.md](DEPLOY.md): cómo publicar una versión en AWS y qué hacer cuando falla.
+- [infra/terraform/README.md](infra/terraform/README.md): estructura de módulos y ambientes.
+- Evidencia de la versión v1.0.0 (comandos, resultados y checksums): PR #29, en `docs/evidence/v1.0.0/` cuando se fusione.
 
-Desde `backend/`:
+## Si algo falla
 
-```bash
-npm run typecheck   # TypeScript en modo strict
-npm run lint        # Biome: cero errores y cero advertencias
-npm test            # Vitest
-npm run build       # Compilación a dist/
-```
-
-Desde `frontend/`:
-
-```bash
-npm run typecheck
-npm run lint        # Biome: cero errores y cero advertencias
-npm run build
-```
-
-## Especificaciones y pruebas
-
-Cada regla crítica está trazada de la especificación al escenario Gherkin y
-de ahí a la prueba automatizada.
-
-| SPEC            | Regla                                   | Implementación               |
-|-----------------|-----------------------------------------|------------------------------|
-| SPEC-UPLOAD-001 | Tipo y tamaño de la imagen subida       | `image-upload.validation.ts` |
-| SPEC-ANNOT-001  | Geometría y categoría de las cajas      | `annotation.validation.ts`   |
-| SPEC-COCO-001   | Estructura y consistencia del JSON COCO | `coco-export.builder.ts`     |
-| SPEC-SEARCH-001 | Operadores `AND` / `OR` de búsqueda     | `search-query.parser.ts`     |
-| SPEC-VALID-001  | Validación de la frontera HTTP con Zod  | `annotation.validation.ts`   |
-| SPEC-DASH-001   | Métricas del dashboard desde SQL        | `dashboard.builder.ts`       |
-
-```text
-backend/specs/<nombre>.spec.md
-        ↓
-backend/features/<nombre>.feature    (Given / When / Then)
-        ↓
-backend/tests/<nombre>.test.ts       (Vitest)
-        ↓
-backend/src/logic/<nombre>.ts        (implementación)
-```
-
-Las pruebas están diseñadas para fallar si la lógica se rompe: invertir
-`width` y `height` en la exportación COCO, permitir un `categoryId` no
-positivo o dejar de validar `imageId` hace fallar la suite.
-
-## Fuera de alcance
-
-El entrenamiento del modelo y MLOps corresponden a una fase posterior.
-
-## Etapas del proyecto
-
-El proyecto se construyó por etapas, cada una sobre la anterior:
-
-| Etapa | Qué aportó                                                                 |
-|-------|----------------------------------------------------------------------------|
-| 1     | Esqueleto: TypeScript, Biome, arquitectura UI/Logic/Data, esquema Drizzle. |
-| 2     | Persistencia: MariaDB, MinIO, migraciones, upload de imágenes, seeder.     |
-| 3     | Frontend React: portal de anotación, canvas, dashboard y búsqueda.         |
-| 4     | Integración final: lógica de negocio, COCO, dashboard y validación Zod.    |
-
-### Qué agrega la etapa final (integración)
-
-Esta etapa conecta el frontend con el backend y completa lo que faltaba para
-que el portal funcione de punta a punta:
-
-- **Exportación COCO** (`GET /export/coco`): documento JSON descargable con
-  `images`, `annotations` y `categories`, con ids consistentes entre
-  secciones (SPEC-COCO-001).
-- **Métricas del dashboard** (`GET /dashboard/summary`): totales, objetos por
-  clase y progreso de anotación, todo calculado en SQL (SPEC-DASH-001).
-- **Búsqueda por clases con operadores** en `GET /images/search`: `AND` / `OR`
-  resueltos con subconsultas `EXISTS` en SQL, más filtros por categoría,
-  estado y rango de fechas (SPEC-SEARCH-001).
-- **Validación de la frontera HTTP con Zod**: todo body, query param y route
-  param se valida antes de llegar a la base de datos, con errores tipados que
-  la UI mapea a códigos HTTP (SPEC-VALID-001).
-- **Reglas de anotación**: la caja debe caber dentro de la imagen, el área la
-  calcula el backend, y una imagen sin cajas no puede quedar como completada
-  (SPEC-ANNOT-001).
-
-### Notas de puesta en marcha
-
-- Usa `npm install` la primera vez en cada paquete (`backend/` y `frontend/`).
-  `node_modules` no se versiona: se reconstruye desde `package-lock.json`.
-- El backend valida sus variables de entorno al arrancar (fail-fast con Zod).
-  Si falta el `.env` o alguna variable, el proceso termina indicando cuáles
-  faltan; copia `.env.example` a `.env` antes de arrancar.
-- Si publicaste MariaDB en un puerto distinto al 3306 (por ejemplo 3307
-  porque el 3306 ya estaba ocupado), ajusta `DATABASE_URL` en `backend/.env`
-  para que coincida.
-- El frontend habla con el backend a través del proxy `/api` de Vite en
-  desarrollo. `VITE_API_BASE_URL` puede dejarse en `/api`; en producción se
-  apunta a la URL real del backend.
+| Síntoma | Causa y qué hacer |
+|---|---|
+| Las pantallas de calidad dicen «Sin datos» | Faltó `dvc pull -r prod` y `dvc repro` antes de `docker compose up`. O usa `make demo`. |
+| `dvc pull` responde «no default remote» | Usa `dvc pull -r prod`: el repo no define un remoto por defecto. |
+| `dvc pull` falla con credenciales inválidas | Renueva las credenciales de AWS. Sin acceso al bucket de PROD, usa `make demo`. |
+| `dvc repro` termina con error en `release` | La compuerta quedó en `fail`. Lee la salida: dice qué check falló y con qué valor. |
+| `make: command not found` (Windows) | Usa Git Bash o WSL, o corre a mano los comandos de [Arranque desde cero](#arranque-desde-cero). |

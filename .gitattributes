@@ -1,0 +1,3 @@
+# make falla con saltos de línea CRLF. El Makefile se queda en LF aunque el
+# checkout sea en Windows con core.autocrlf=true.
+Makefile text eol=lf

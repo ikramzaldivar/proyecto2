@@ -37,6 +37,88 @@ function StatsTable({ title, stats }: { title: string; stats: SpatialStats }) {
   );
 }
 
+const SCATTER_COLORS = ["#7C6FEA", "#2FAF87", "#B08900", "#4A6FE0", "#C2410C", "#9333EA"];
+
+/**
+ * Scatter SVG de los centros normalizados por categoría. Punto = centro
+ * medio; caja = rango intercuartílico (p25–p75). Es un gráfico real, no un
+ * adorno: se ve dónde se concentran los objetos de cada clase.
+ */
+function SpatialScatter({
+  entries,
+  names,
+}: {
+  entries: Array<[string, SpatialStats]>;
+  names: Map<number, string>;
+}) {
+  const size = 320;
+  const pad = 32;
+  const inner = size - 2 * pad;
+  const toX = (value: number) => pad + value * inner;
+  const toY = (value: number) => size - pad - value * inner;
+
+  return (
+    <svg
+      data-testid="spatial-scatter"
+      viewBox={`0 0 ${size} ${size}`}
+      role="img"
+      aria-label="Dispersión de los centros normalizados por categoría"
+      className="mx-auto h-auto w-full max-w-sm"
+    >
+      <rect x={pad} y={pad} width={inner} height={inner} fill="#FAFAF9" stroke="#DDE3E9" />
+      <line
+        x1={toX(0.5)}
+        y1={pad}
+        x2={toX(0.5)}
+        y2={size - pad}
+        stroke="#E7E5E1"
+        strokeDasharray="3 3"
+      />
+      <line
+        x1={pad}
+        y1={toY(0.5)}
+        x2={size - pad}
+        y2={toY(0.5)}
+        stroke="#E7E5E1"
+        strokeDasharray="3 3"
+      />
+
+      {entries.map(([categoryId, stats], index) => {
+        const color = SCATTER_COLORS[index % SCATTER_COLORS.length] ?? "#7C6FEA";
+        const name = names.get(Number(categoryId)) ?? `#${categoryId}`;
+        const boxX = Math.min(toX(stats.p25_x), toX(stats.p75_x));
+        const boxY = Math.min(toY(stats.p25_y), toY(stats.p75_y));
+        const boxWidth = Math.max(2, Math.abs(toX(stats.p75_x) - toX(stats.p25_x)));
+        const boxHeight = Math.max(2, Math.abs(toY(stats.p25_y) - toY(stats.p75_y)));
+        return (
+          <g key={categoryId}>
+            <rect
+              x={boxX}
+              y={boxY}
+              width={boxWidth}
+              height={boxHeight}
+              fill={color}
+              fillOpacity={0.15}
+              stroke={color}
+            />
+            <circle cx={toX(stats.mean_x)} cy={toY(stats.mean_y)} r={5} fill={color} />
+            <text x={toX(stats.mean_x) + 8} y={toY(stats.mean_y) - 6} fontSize="10" fill="#333333">
+              {name}
+            </text>
+          </g>
+        );
+      })}
+
+      <text x={pad} y={size - 10} fontSize="9" fill="#8A8782">
+        0
+      </text>
+      <text x={size - pad - 4} y={size - 10} fontSize="9" fill="#8A8782">
+        1
+      </text>
+    </svg>
+  );
+}
+
 export function SpatialBiasPanel({
   report,
   categories,
@@ -62,20 +144,10 @@ export function SpatialBiasPanel({
 
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
         <h3 className="mb-3 text-sm font-medium text-ink">Centro medio por categoría</h3>
-        <div className="relative mx-auto aspect-square w-full max-w-sm rounded-xl border border-dashed border-border-strong bg-canvas">
-          {entries.map(([categoryId, stats]) => (
-            <span
-              key={categoryId}
-              title={`${names.get(Number(categoryId)) ?? `#${categoryId}`}: (${stats.mean_x.toFixed(2)}, ${stats.mean_y.toFixed(2)})`}
-              className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-lilac ring-2 ring-white"
-              style={{ left: `${stats.mean_x * 100}%`, top: `${stats.mean_y * 100}%` }}
-            >
-              <span className="sr-only">{names.get(Number(categoryId)) ?? `#${categoryId}`}</span>
-            </span>
-          ))}
-        </div>
+        <SpatialScatter entries={entries} names={names} />
         <p className="mt-2 text-center text-xs text-ink-faint">
-          Posición promedio del centro de cada caja, normalizada por el tamaño de su imagen.
+          Punto = centro medio; caja = rango intercuartílico (p25–p75). Coordenadas normalizadas 0–1
+          sobre el tamaño de cada imagen.
         </p>
       </div>
 

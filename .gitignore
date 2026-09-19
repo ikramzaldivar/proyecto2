@@ -35,6 +35,9 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 .terraform.tfstate.lock.info
+# Dataset sintetico de `make demo`: imagenes generadas, no se versionan
+demo/
+
 # Python (quality/)
 .venv/
 __pycache__/
