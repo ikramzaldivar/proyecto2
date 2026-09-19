@@ -1,5 +1,9 @@
 # Portal de anotación de imágenes
 
+> Antecedente: este documento describe el portal del **Proyecto 1**. El proyecto actual
+> (dataset COCO versionado y liberable, con pipeline de calidad, DVC, Copilot y Terraform)
+> se describe en el [README de la raíz](../README.md).
+
 Monolito para subir, anotar y exportar un dataset de detección de objetos.
 Las imágenes se almacenan en MinIO; los metadatos y las anotaciones en MariaDB.
 
