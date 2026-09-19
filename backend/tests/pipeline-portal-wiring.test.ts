@@ -98,12 +98,12 @@ describe('docker-compose monta los artefactos y la política dentro del backend'
   it('monta ./reports en el directorio de artefactos, solo lectura', () => {
     const target = backend.environment.QUALITY_ARTIFACTS_DIR;
 
-    expect(volumes).toContain(`./reports:${target}:ro`);
+    expect(volumes).toContain(`\${QUALITY_REPORTS_DIR:-./reports}:${target}:ro`);
   });
 
   it('monta quality.yaml con escritura, porque Settings lo edita', () => {
     const target = backend.environment.QUALITY_CONFIG_PATH;
 
-    expect(volumes).toContain(`./quality/quality.yaml:${target}`);
+    expect(volumes).toContain(`\${QUALITY_CONFIG_FILE:-./quality/quality.yaml}:${target}`);
   });
 });

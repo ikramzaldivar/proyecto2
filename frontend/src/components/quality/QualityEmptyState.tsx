@@ -20,8 +20,12 @@ export function QualityEmptyState({ message, title = "Sin datos" }: QualityEmpty
           Genera los artefactos del pipeline y vuelve a intentar:
         </p>
         <pre className="mt-1 overflow-x-auto font-mono text-xs text-ink">
-          <code>{"dvc pull && dvc repro\ndocker compose up --build"}</code>
+          <code>{"dvc pull -r prod && dvc repro\ndocker compose up --build"}</code>
         </pre>
+        <p className="mt-2 text-xs text-ink-muted">
+          Sin acceso a los remotos de DVC, genera datos de ejemplo con{" "}
+          <code className="font-mono text-ink">make demo</code>.
+        </p>
       </div>
     </div>
   );

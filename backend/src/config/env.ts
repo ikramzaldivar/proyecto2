@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { z } from 'zod';
 import { DEFAULT_QUALITY_ARTIFACTS_DIR, DEFAULT_QUALITY_CONFIG_PATH } from './quality-paths.js';
 
+const emptyToUndefined = (value: unknown): unknown => (value === '' ? undefined : value);
+
 /**
  * Valida las variables de entorno usadas por la aplicación.
  */
@@ -66,8 +68,9 @@ const envSchema = z
     // Copilot: proveedor de LLM opcional. La API key nunca se versiona; si
     // falta, el Copilot responde en modo anclado a las herramientas.
     COPILOT_PROVIDER: z.enum(['none', 'anthropic', 'mistral']).default('none'),
-    COPILOT_API_KEY: z.string().min(1).optional(),
-    COPILOT_MODEL: z.string().min(1).optional(),
+    // Vacío significa "sin configurar": .env.example los trae vacíos a propósito.
+    COPILOT_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+    COPILOT_MODEL: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
   })
   .superRefine((value, context) => {
     if (!value.DATABASE_URL) {

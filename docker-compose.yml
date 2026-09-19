@@ -52,11 +52,17 @@ services:
       MAX_UPLOAD_SIZE_BYTES: 5242880
       # Vistas de calidad: el portal lee lo que escribe el pipeline de DVC
       # (reports/) y Settings edita la misma politica que lee dvc.yaml.
+      # QUALITY_REPORTS_DIR y QUALITY_CONFIG_FILE solo se cambian en `make demo`,
+      # que apunta a los artefactos y a la politica del dataset sintetico.
       QUALITY_ARTIFACTS_DIR: /artifacts
       QUALITY_CONFIG_PATH: /config/quality.yaml
+      # Dataset Copilot: se leen del .env de la raiz. Sin clave responde en modo anclado.
+      COPILOT_PROVIDER: ${COPILOT_PROVIDER:-none}
+      COPILOT_API_KEY: ${COPILOT_API_KEY:-}
+      COPILOT_MODEL: ${COPILOT_MODEL:-}
     volumes:
-      - ./reports:/artifacts:ro
-      - ./quality/quality.yaml:/config/quality.yaml
+      - ${QUALITY_REPORTS_DIR:-./reports}:/artifacts:ro
+      - ${QUALITY_CONFIG_FILE:-./quality/quality.yaml}:/config/quality.yaml
     ports:
       - "3100:3100"
     restart: on-failure:5
