@@ -26,9 +26,7 @@ function relativeLinks(markdown: string): string[] {
 
 /** Destinos de `cd <ruta>` escritos como ruta relativa a la raíz del repo. */
 function cdTargets(markdown: string): string[] {
-  return [...markdown.matchAll(/^\s*cd\s+([A-Za-z][\w./-]*)\s*$/gm)].map(
-    (match) => match[1] ?? '',
-  );
+  return [...markdown.matchAll(/^\s*cd\s+([A-Za-z][\w./-]*)\s*$/gm)].map((match) => match[1] ?? '');
 }
 
 const QUALITY_ROUTES = [
@@ -96,7 +94,9 @@ describe('C-01 — «Arranque desde cero» es una secuencia sin pasos implícito
   });
 
   it('explica por qué hay que correr el pipeline antes de levantar la app', () => {
-    expect(section ?? '').toMatch(/salidas del pipeline|no (son|van en) (la )?fuente|no van en git/i);
+    expect(section ?? '').toMatch(
+      /salidas del pipeline|no (son|van en) (la )?fuente|no van en git/i,
+    );
   });
 
   it('ofrece una salida para quien no tiene acceso a los remotos de DVC', () => {
@@ -232,8 +232,10 @@ describe('C-03 — un solo comando y una salida sin acceso a los remotos', () =>
   it('el compose permite apuntar a otra carpeta de artefactos y a otra política', () => {
     const compose = read('docker-compose.yml');
 
-    expect(compose).toContain('${QUALITY_REPORTS_DIR:-./reports}:/artifacts:ro');
-    expect(compose).toContain('${QUALITY_CONFIG_FILE:-./quality/quality.yaml}:/config/quality.yaml');
+    expect(compose).toContain(`\${QUALITY_REPORTS_DIR:-./reports}:/artifacts:ro`);
+    expect(compose).toContain(
+      `\${QUALITY_CONFIG_FILE:-./quality/quality.yaml}:/config/quality.yaml`,
+    );
   });
 
   it('el Makefile se queda con saltos de línea LF en cualquier checkout (make falla con CRLF)', () => {
