@@ -142,6 +142,7 @@ describe('SPEC-QUALITY-UI-002 — Overview con datos reales', () => {
     );
 
     expect(screen.getByText(/sin datos/i)).toBeInTheDocument();
+    expect(screen.getByText(/dvc repro/i)).toBeInTheDocument();
   });
 
   it('muestra un estado de error con mensaje del servidor', () => {
