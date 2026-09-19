@@ -3,6 +3,7 @@
 Cómo publicar una versión nueva del portal en AWS y cómo diagnosticarlo cuando falla.
 
 Para el detalle de los recursos de infraestructura, ver [`infra/terraform/README.md`](infra/terraform/README.md).
+Para respaldar y restaurar la base de datos, las imágenes y los datos de calidad, ver [`docs/respaldo-y-restauracion.md`](docs/respaldo-y-restauracion.md).
 
 ## Cómo está desplegado
 
@@ -130,6 +131,13 @@ Síntomas frecuentes:
 | La tarea arranca y muere en bucle | Falta una variable de entorno, o el backend no alcanza RDS |
 | El ALB devuelve 503 | No hay tareas sanas en el target group |
 | `terraform plan` pide destruir cosas | El state no coincide con la rama. Confirma que estás en la rama correcta antes de aplicar |
+
+## 6. Respaldo y restauración
+
+RDS conserva respaldos automáticos 1 día (tope del plan Free Tier de la cuenta); los buckets de
+imágenes y de DVC están versionados; los releases aprobados tienen Object Lock. Antes de un cambio
+arriesgado toma un snapshot manual de RDS. Procedimientos y pruebas en
+[`docs/respaldo-y-restauracion.md`](docs/respaldo-y-restauracion.md).
 
 ## Reglas
 

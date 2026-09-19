@@ -183,6 +183,7 @@ los recursos en [infra/terraform/README.md](infra/terraform/README.md).
 - [docs/portal-mp1.md](docs/portal-mp1.md): el portal de anotación del Proyecto 1 (antecedente).
 - [docs/frente3-quality-api.md](docs/frente3-quality-api.md): endpoints `/quality/*`, contrato de artefactos y variables.
 - [DEPLOY.md](DEPLOY.md): cómo publicar una versión en AWS y qué hacer cuando falla.
+- [docs/respaldo-y-restauracion.md](docs/respaldo-y-restauracion.md): qué se respalda y cómo se restaura MariaDB, las imágenes del portal y los datos de DVC, en local y en AWS.
 - [infra/terraform/README.md](infra/terraform/README.md): estructura de módulos y ambientes.
 - [docs/evidence/v1.0.0/README.md](docs/evidence/v1.0.0/README.md): evidencia de la versión v1.0.0 (comandos, resultados y checksums).
 
@@ -193,5 +194,6 @@ los recursos en [infra/terraform/README.md](infra/terraform/README.md).
 | Las pantallas de calidad dicen «Sin datos» | Faltó `dvc pull -r prod` y `dvc repro` antes de `docker compose up`. O usa `make demo`. |
 | `dvc pull` responde «no default remote» | Usa `dvc pull -r prod`: el repo no define un remoto por defecto. |
 | `dvc pull` falla con credenciales inválidas | Renueva las credenciales de AWS. Sin acceso al bucket de PROD, usa `make demo`. |
+| Perdí datos o necesito volver a un estado anterior (MariaDB, imágenes, DVC) | Sigue [docs/respaldo-y-restauracion.md](docs/respaldo-y-restauracion.md). |
 | `dvc repro` termina con error en `release` | La compuerta quedó en `fail`. Lee la salida: dice qué check falló y con qué valor. |
 | `make: command not found` (Windows) | Usa Git Bash o WSL, o corre a mano los comandos de [Arranque desde cero](#arranque-desde-cero). |
