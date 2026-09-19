@@ -7,7 +7,6 @@ from dataset_quality.adapters.config_loader import load_quality_config
 from dataset_quality.models.config import (
     REQUIRED_CHECKS,
     CheckConfig,
-    PipelineSettings,
     QualityConfig,
     SplitConfig,
 )
@@ -101,24 +100,3 @@ def test_load_quality_config_raises_clear_error_when_file_is_missing(tmp_path: P
     missing_path = tmp_path / "does_not_exist.yaml"
     with pytest.raises(FileNotFoundError, match="does_not_exist.yaml"):
         load_quality_config(missing_path)
-
-
-def test_pipeline_settings_requires_coco_source_path(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("DATASET_QUALITY_COCO_SOURCE_PATH", raising=False)
-    with pytest.raises(ValidationError, match="coco_source_path"):
-        PipelineSettings(_env_file=None)
-
-
-def test_pipeline_settings_loads_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("DATASET_QUALITY_COCO_SOURCE_PATH", "/data/dataset.json")
-    settings = PipelineSettings(_env_file=None)
-    assert settings.coco_source_path == "/data/dataset.json"
-
-
-def test_pipeline_settings_rejects_extra_field() -> None:
-    # pydantic-settings solo lee las variables de entorno que coinciden con
-    # un campo declarado — una env var "extra" con el prefijo correcto nunca
-    # llega al modelo, así que no hay nada que rechazar por esa vía. Para
-    # probar extra="forbid" de verdad, se pasa el campo extra directo.
-    with pytest.raises(ValidationError, match="extra"):
-        PipelineSettings(coco_source_path="/data/dataset.json", oops="surprise", _env_file=None)

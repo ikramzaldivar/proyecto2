@@ -1,7 +1,6 @@
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # "warn" deja pasar el pipeline pero queda visible en el reporte; "fail"
 # termina con exit code distinto de cero y bloquea el release (CAL 08).
@@ -73,18 +72,3 @@ class QualityConfig(BaseModel):
         if missing:
             raise ValueError(f"missing required checks: {sorted(missing)}")
         return self
-
-
-class PipelineSettings(BaseSettings):
-    """Variables de entorno del pipeline. Fail-fast: si falta una variable
-    requerida, el proceso no arranca — nada de leer os.environ suelto
-    dentro de los analizadores (ver CAL 00). Se cargan desde .env si existe,
-    o directamente del entorno (las de entorno real siempre ganan)."""
-
-    model_config = SettingsConfigDict(
-        env_prefix="DATASET_QUALITY_", env_file=".env", extra="forbid"
-    )
-
-    coco_source_path: str
-    quality_config_path: str = "quality.yaml"
-    output_dir: str = "output"
