@@ -1,4 +1,6 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -199,7 +201,7 @@ describe('C-03 — un solo comando y una salida sin acceso a los remotos', () =>
   const makefile = read('Makefile');
 
   function recipe(target: string): string[] {
-    const lines = (makefile.split(new RegExp(`^${target}:.*$`, 'm'))[1] ?? '')
+    const lines = (makefile.split(new RegExp(`^${target}:\\s*$`, 'm'))[1] ?? '')
       .replace(/\r/g, '')
       .split('\n')
       .slice(1);
@@ -229,6 +231,53 @@ describe('C-03 — un solo comando y una salida sin acceso a los remotos', () =>
     expect(steps).toContain('--config $(DEMO_POLICY)');
     expect(steps).toContain('docker compose up --build');
   });
+
+  it('las recetas no usan comandos ni sintaxis que solo existen en un shell POSIX', () => {
+    const recipes = makefile
+      .split('\n')
+      .filter((line) => line.startsWith('\t'))
+      .map((line) => line.trim());
+
+    for (const step of recipes) {
+      expect(step, step).not.toMatch(/^(cp|mkdir|rm|mv|ln|touch|cat)\b/);
+      expect(step, step).not.toMatch(/^[A-Z_]+=\S+\s/);
+    }
+  });
+
+  it('`make demo` exporta las variables con export, que make aplica igual en cualquier shell', () => {
+    expect(makefile).toMatch(/^demo: export PYTHONPATH\s*=\s*quality\/src$/m);
+    expect(makefile).toMatch(/^demo: export QUALITY_REPORTS_DIR\s*=/m);
+    expect(makefile).toMatch(/^demo: export QUALITY_CONFIG_FILE\s*=/m);
+  });
+
+  const python = ['python', 'python3'].find((name) => spawnSync(name, ['--version']).status === 0);
+
+  it.skipIf(!python)(
+    '`make setup` crea .env con Python: copia los bytes exactos y nunca pisa uno existente',
+    () => {
+      const step = recipe('setup').find((line) => line.startsWith('python -c '));
+      expect(step, 'setup debe crear .env con `python -c`').toBeTruthy();
+      const code = (step ?? '').slice((step ?? '').indexOf('"') + 1, (step ?? '').lastIndexOf('"'));
+
+      const dir = mkdtempSync(path.join(tmpdir(), 'make-setup-'));
+      try {
+        // acentos y CRLF, como el .env.example real en un checkout de Windows
+        const template = Buffer.from('# Configuraci\u00f3n: base de datos y calidad\r\nPORT=3000\r\n', 'utf-8');
+        writeFileSync(path.join(dir, '.env.example'), template);
+
+        const first = spawnSync(python ?? 'python', ['-c', code], { cwd: dir });
+        expect(first.status, String(first.stderr)).toBe(0);
+        expect(readFileSync(path.join(dir, '.env')).equals(template)).toBe(true);
+
+        writeFileSync(path.join(dir, '.env'), 'PORT=9999\n');
+        const second = spawnSync(python ?? 'python', ['-c', code], { cwd: dir });
+        expect(second.status, String(second.stderr)).toBe(0);
+        expect(readFileSync(path.join(dir, '.env'), 'utf-8')).toBe('PORT=9999\n');
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
 
   it('el compose permite apuntar a otra carpeta de artefactos y a otra política', () => {
     const compose = read('docker-compose.yml');
