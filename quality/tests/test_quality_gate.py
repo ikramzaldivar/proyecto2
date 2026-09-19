@@ -244,3 +244,42 @@ def test_small_objects_stays_informational_without_a_configured_max_percent() ->
 
     small_objects_check = next(c for c in result.checks if c.name == "small_objects")
     assert small_objects_check.status == "pass"
+
+
+def test_spatial_bias_produces_warn_when_max_deviation_is_configured_and_exceeded() -> None:
+    # C-13: mismo patrón que small_objects — max_center_deviation es
+    # opcional; si está configurado y se supera, el check se dispara.
+    config_dict = _base_config(min_images_threshold=2)
+    config_dict["checks"]["spatial_bias"]["max_center_deviation"] = 0.1
+    config = QualityConfig.model_validate(config_dict)
+
+    result = _run_gate(_clean_dataset(), config)  # centro real ~(0.2, 0.2)
+
+    spatial_bias_check = next(c for c in result.checks if c.name == "spatial_bias")
+    assert spatial_bias_check.status == "warn"
+    assert result.overall_status == "pass"
+    assert result.exit_code == 0
+
+
+def test_spatial_bias_blocks_the_release_when_severity_is_fail() -> None:
+    config_dict = _base_config(min_images_threshold=2)
+    config_dict["checks"]["spatial_bias"]["max_center_deviation"] = 0.1
+    config_dict["checks"]["spatial_bias"]["severity"] = "fail"
+    config = QualityConfig.model_validate(config_dict)
+
+    result = _run_gate(_clean_dataset(), config)
+
+    spatial_bias_check = next(c for c in result.checks if c.name == "spatial_bias")
+    assert spatial_bias_check.status == "fail"
+    assert result.overall_status == "fail"
+    assert result.exit_code != 0
+
+
+def test_spatial_bias_stays_informational_without_a_configured_max_deviation() -> None:
+    # Sin max_center_deviation en el YAML, el check sigue siendo
+    # puramente informativo.
+    config = QualityConfig.model_validate(_base_config(min_images_threshold=2))
+    result = _run_gate(_clean_dataset(), config)
+
+    spatial_bias_check = next(c for c in result.checks if c.name == "spatial_bias")
+    assert spatial_bias_check.status == "pass"

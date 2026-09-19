@@ -151,10 +151,11 @@ def evaluate_quality_gate(
             severity=small_config.severity,
             threshold=small_config.threshold,
             observed={
+                "small_object_px_threshold": small_config.threshold,
                 "small_percent": small_objects.small_percent,
+                "max_small_percent_allowed": small_config.max_small_percent,
                 "percent_by_category": small_objects.percent_by_category,
                 "most_affected_category_id": small_objects.most_affected_category_id,
-                "max_small_percent": small_config.max_small_percent,
             },
             samples=[
                 sample.model_dump() for sample in small_objects.offending_samples[:MAX_SAMPLES]
@@ -184,7 +185,7 @@ def evaluate_quality_gate(
                     for category_id, stats in spatial_bias.stats_by_category.items()
                 },
                 "center_deviation": center_deviation,
-                "max_center_deviation": spatial_config.max_center_deviation,
+                "max_center_deviation_allowed": spatial_config.max_center_deviation,
             },
             samples=[],
         )
