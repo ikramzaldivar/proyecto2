@@ -149,6 +149,7 @@ describe('C-01 — los documentos que existen no quedan huérfanos', () => {
     'infra/terraform/README.md',
     'docs/frente3-quality-api.md',
     'docs/portal-mp1.md',
+    'docs/evidence/v1.0.0/README.md',
   ])('el README enlaza %s', (target) => {
     expect(readme).toContain(`](${target})`);
     expect(exists(target)).toBe(true);
@@ -240,6 +241,10 @@ describe('C-03 — un solo comando y una salida sin acceso a los remotos', () =>
 
   it('el Makefile se queda con saltos de línea LF en cualquier checkout (make falla con CRLF)', () => {
     expect(read('.gitattributes')).toMatch(/^Makefile\s+text\s+eol=lf$/m);
+  });
+
+  it('los checksums de la evidencia se quedan en LF (con CRLF, shasum -c no encuentra los archivos)', () => {
+    expect(read('.gitattributes')).toMatch(/^\*\.sha256\s+text\s+eol=lf$/m);
   });
 
   it('la carpeta demo/ no se versiona (la rúbrica penaliza imágenes en git)', () => {

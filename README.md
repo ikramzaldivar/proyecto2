@@ -184,7 +184,7 @@ los recursos en [infra/terraform/README.md](infra/terraform/README.md).
 - [docs/frente3-quality-api.md](docs/frente3-quality-api.md): endpoints `/quality/*`, contrato de artefactos y variables.
 - [DEPLOY.md](DEPLOY.md): cómo publicar una versión en AWS y qué hacer cuando falla.
 - [infra/terraform/README.md](infra/terraform/README.md): estructura de módulos y ambientes.
-- Evidencia de la versión v1.0.0 (comandos, resultados y checksums): PR #29, en `docs/evidence/v1.0.0/` cuando se fusione.
+- [docs/evidence/v1.0.0/README.md](docs/evidence/v1.0.0/README.md): evidencia de la versión v1.0.0 (comandos, resultados y checksums).
 
 ## Si algo falla
 
