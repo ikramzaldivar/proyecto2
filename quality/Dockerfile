@@ -22,6 +22,7 @@ RUN pip install --no-cache-dir --no-deps -e ./quality
 
 COPY quality/tests/ ./quality/tests/
 COPY quality/quality.yaml ./quality/quality.yaml
+COPY quality/quality.demo.yaml ./quality/quality.demo.yaml
 
 # Scripts de orquestacion del pipeline: viven en la raiz del repo, fuera del
 # paquete, y el paquete no los importa — se ejecutan como procesos aparte.
