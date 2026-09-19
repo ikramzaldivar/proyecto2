@@ -1,3 +1,6 @@
 # make falla con saltos de línea CRLF. El Makefile se queda en LF aunque el
 # checkout sea en Windows con core.autocrlf=true.
 Makefile text eol=lf
+
+# shasum -c falla si los nombres de archivo llevan un retorno de carro (CRLF).
+*.sha256 text eol=lf
