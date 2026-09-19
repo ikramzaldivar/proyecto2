@@ -223,10 +223,20 @@ locales fuera del control de versiones.
 
 `reports/release.json` **no está** en `checksums.sha256` a propósito: contiene
 `generated_at`, así que cada regeneración produce un archivo con otro checksum, y el
-que se regeneró en esta corrida no se publicó en PROD. El `release.json` publicado es el
-que registra `dvc.lock` (md5 `3f07eec1c8be6866d307050da7d89308`, empujado por Andrés al
-cortar v1.0.0) y es el que devuelve `dvc pull -r prod`. Además, `reports/metrics.json`
+que se regeneró en esta corrida no se publicó en PROD. El `release.json` oficial de v1.0.0 es el
+que registra `dvc.lock` (md5 `da513805a74302569a3e980b8184f310`, `dataset_version: v1.0.0`) y es
+el que devuelve `dvc pull -r prod`. Además, `reports/metrics.json`
 viene de git y no de `dvc pull`.
+
+> **Actualización (PR #38).** El primer corte se hizo sin `DATASET_VERSION=v1.0.0`, así que el
+> `release.json` empujado originalmente (md5 `3f07eec1c8be6866d307050da7d89308`) decía
+> `dataset_version: v0.0.0-dev`, y así lo mostraban el portal y el Copilot. Se re-cortó solo la
+> etapa `release` con la variable puesta (`DATASET_VERSION=v1.0.0 dvc repro -f -s release`):
+> mismo dataset y mismos resultados, solo cambian `dataset_version` y `generated_at`. Ese archivo
+> (`da513805…`) es el que registra `dvc.lock`, el que está en los remotos `prod`/`dev` y el que se
+> publicó en el bucket inmutable `s3://proyecto2-prod-releases-<cuenta>/v1.0.0/`. El `3f07eec1…`
+> sigue en el remoto como histórico. Las menciones a `v0.0.0-dev` en las secciones anteriores
+> describen esa primera corrida.
 
 Verificación de integridad, después de `dvc pull -r prod`:
 
