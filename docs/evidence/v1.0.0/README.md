@@ -32,12 +32,12 @@ Evidencia reproducible de la corrida completa del pipeline de calidad
 
 ## 1. Verificación previa (pytest, ruff)
 
-\`\`\`bash
+```bash
 cd quality
 pytest -v
 ruff check .
 ruff format --check .
-\`\`\`
+```
 
 **Resultado:** 102/102 tests pasan en local. `ruff check` y `ruff format`
 sin hallazgos (tras corregir orden de imports y longitud de línea en 4
@@ -46,13 +46,13 @@ solo reformateo, sin cambios de lógica).
 
 ## 2. `dvc repro` — primera corrida (regenera el pipeline)
 
-\`\`\`bash
+```bash
 dvc repro
-\`\`\`
+```
 
 **Resultado:**
 
-\`\`\`
+```
 'data/raw.dvc' didn't change, skipping
 Running stage 'hash_images':
 > PYTHONPATH=quality/src python pipeline/hash_images.py --images data/raw/images --out reports/image_hashes.json
@@ -72,17 +72,17 @@ release v0.0.0-dev -> reports/release.json
 quality gate: pass (exit code 0)
   warn: duplicates {'group_count': 1, 'pair_count': 1}
 splits: train=482, val=104, test=103 | fuga: ids=0 pares_cruzados=0
-\`\`\`
+```
 
 ## 3. `dvc repro` — segunda corrida (confirma idempotencia)
 
-\`\`\`bash
+```bash
 dvc repro
-\`\`\`
+```
 
 **Resultado:**
 
-\`\`\`
+```
 'data/raw.dvc' didn't change, skipping
 Stage 'hash_images' didn't change, skipping
 'data/annotations/coco-dataset.json.dvc' didn't change, skipping
@@ -90,7 +90,7 @@ Stage 'analyze' didn't change, skipping
 Stage 'embeddings' didn't change, skipping
 Stage 'release' didn't change, skipping
 Data and pipelines are up to date.
-\`\`\`
+```
 
 Confirma que el pipeline es determinista: sin cambios en las entradas, la
 segunda corrida no vuelve a ejecutar ninguna etapa.
@@ -103,13 +103,13 @@ sobre el mismo dataset (nota: usa `data/raw/coco.json`, copia local con el
 mismo contenido que `data/annotations/coco-dataset.json` — ver checksum en
 sección 8):
 
-\`\`\`bash
+```bash
 quality-gate \
   --coco data/raw/coco.json \
   --config quality/quality.yaml \
   --images-dir data/raw/images \
   --output evidence/quality_689.json
-\`\`\`
+```
 
 **Resultado:** `overall_status: "pass"`, `exit_code: 0` — mismo resultado
 que el `reports/release.json` generado por el pipeline de `dvc.yaml`
@@ -142,12 +142,12 @@ después de colapsar el grupo de duplicados detectado (imágenes 604/713).
 
 ## 7. Splits — reproducibilidad y leakage
 
-\`\`\`
+```
 train = 482
 val   = 104
 test  = 103
 fuga: ids=0, pares_cruzados=0
-\`\`\`
+```
 
 Cero leakage confirmado entre splits: ningún id de imagen aparece en más de
 un split, y el grupo de duplicados detectado se mantiene junto en el mismo
@@ -158,7 +158,7 @@ split.
 Se configuró un perfil AWS de solo lectura (`proyecto2-prod-readonly`) y se
 confirmó que efectivamente es de solo lectura antes de usarlo:
 
-\`\`\`bash
+```bash
 aws sts get-caller-identity --profile proyecto2-prod-readonly
 # arn:aws:iam::595981034933:user/alejandra-proyecto2-dvc-readonly
 
@@ -167,21 +167,21 @@ aws s3 cp /tmp/no-write.txt \
   s3://proyecto2-prod-dvc-595981034933/no-write-alejandra.txt \
   --profile proyecto2-prod-readonly
 # → falla con AccessDenied (confirmado)
-\`\`\`
+```
 
 Después se recuperaron los artefactos ya publicados en PROD:
 
-\`\`\`bash
+```bash
 dvc pull -r prod
-\`\`\`
+```
 
 **Dataset:** el checksum SHA-256 de `data/annotations/coco-dataset.json`
 (recuperado de PROD) coincide exactamente con el usado en la corrida
 standalone (`data/raw/coco.json`, sección 4):
 
-\`\`\`
+```
 93e9d6b8cd849241d149c55bdcaf7692a43fe64cbb3ded81116ce016bde3cdae
-\`\`\`
+```
 
 **Release:** se comparó el `release.json` recuperado de PROD contra el
 generado localmente vía CLI standalone (sección 4). Ambos son idénticos
@@ -189,8 +189,9 @@ salvo `generated_at` y `dataset_version` (`v1.0.0` en la corrida local
 explícita vs `v0.0.0-dev`, el valor que usa el pipeline por defecto). Todos
 los checks del Quality Gate, conteos de clases y splits coinciden
 exactamente tras normalizar ambos campos. Luego se corrió `dvc repro`
-(secciones 2–3) para regenerar `reports/release.json` desde cero, con
-resultado idéntico al ya publicado en PROD.
+(secciones 2–3) para regenerar `reports/release.json` desde cero, con el
+mismo contenido que el publicado en PROD salvo `generated_at`. Por eso el archivo
+regenerado tiene otro checksum y **no** figura en `checksums.sha256` (ver la sección 10).
 
 Esto confirma que el pipeline es reproducible: la corrida de Andrés al
 cortar v1.0.0, la verificación standalone vía CLI, y la regeneración
@@ -203,9 +204,9 @@ Se invirtió temporalmente la comparación de `class_imbalance` en
 (`ratio > threshold` → `ratio < threshold`) para confirmar que la suite
 detecta el cambio:
 
-\`\`\`bash
+```bash
 pytest tests/test_quality_gate.py -v
-\`\`\`
+```
 
 **Con la mutación:** `test_a_warn_severity_check_does_not_block_the_release`
 falla (`assert 'pass' == 'warn'`) — confirma que el test protege
@@ -220,11 +221,18 @@ reales del pipeline (`reports/`), recuperables por cualquier persona con
 acceso de lectura al remoto `prod` vía `dvc pull -r prod` — no rutas
 locales fuera del control de versiones.
 
+`reports/release.json` **no está** en `checksums.sha256` a propósito: contiene
+`generated_at`, así que cada regeneración produce un archivo con otro checksum, y el
+que se regeneró en esta corrida no se publicó en PROD. El `release.json` publicado es el
+que registra `dvc.lock` (md5 `3f07eec1c8be6866d307050da7d89308`, empujado por Andrés al
+cortar v1.0.0) y es el que devuelve `dvc pull -r prod`. Además, `reports/metrics.json`
+viene de git y no de `dvc pull`.
+
 Verificación de integridad, después de `dvc pull -r prod`:
 
-\`\`\`bash
+```bash
 shasum -a 256 -c docs/evidence/v1.0.0/checksums.sha256
-\`\`\`
+```
 
 ## 11. Artefactos verificados
 
@@ -235,7 +243,7 @@ shasum -a 256 -c docs/evidence/v1.0.0/checksums.sha256
 | Reportes de analizadores | `reports/analyzers/*.json` |
 | Resumen de analizadores | `reports/metrics.json` |
 | Embeddings | `reports/embeddings.json` |
-| Release completo | `reports/release.json` |
+| Release completo | `reports/release.json` (md5 de `dvc.lock`; sin SHA-256, ver sección 10) |
 
 Todos ya están respaldados en el remoto `prod` desde el corte de v1.0.0
 (confirmado en la sección 8). No se requirió ningún `dvc push` adicional en

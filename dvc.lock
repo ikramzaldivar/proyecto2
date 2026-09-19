@@ -134,7 +134,7 @@ stages:
     outs:
     - path: reports/release.json
       hash: md5
-      md5: 7c6f3f17dacfd74b8799a99227d87722
+      md5: 3f07eec1c8be6866d307050da7d89308
       size: 19890
   embeddings:
     cmd: cd backend && npm run --silent embeddings -- --coco 
