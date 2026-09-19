@@ -31,7 +31,7 @@ variable "ecr_image_retention_count" {
 variable "release_retention_days" {
   description = "Governance Object Lock retention for dataset releases."
   type        = number
-  default     = 1
+  default     = 90
 }
 
 variable "container_image_tag" {
@@ -85,4 +85,15 @@ variable "terraform_state_key" {
   description = "Object key of the Terraform state in the backend bucket."
   type        = string
   default     = "fargate/terraform.tfstate"
+}
+
+variable "backup_retention_days" {
+  description = "Days RDS keeps automated backups."
+  type        = number
+  # 1 y no 7: la cuenta esta en el plan Free Tier y RDS rechaza cualquier valor
+  # mayor (FreeTierRestrictionError al aplicar, 2026-09-18). Para subirlo hay
+  # que hacer dos cosas, en este orden: (1) cambiar el plan de la cuenta en
+  # AWS y (2) DESPUES subir este valor (p. ej. a 7) en un PR y aplicar. Con el
+  # plan actual, terraform apply falla aunque se cambie el numero.
+  default = 1
 }
