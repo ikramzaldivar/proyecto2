@@ -236,6 +236,10 @@ describe('C-03 — un solo comando y una salida sin acceso a los remotos', () =>
     expect(compose).toContain('${QUALITY_CONFIG_FILE:-./quality/quality.yaml}:/config/quality.yaml');
   });
 
+  it('el Makefile se queda con saltos de línea LF en cualquier checkout (make falla con CRLF)', () => {
+    expect(read('.gitattributes')).toMatch(/^Makefile\s+text\s+eol=lf$/m);
+  });
+
   it('la carpeta demo/ no se versiona (la rúbrica penaliza imágenes en git)', () => {
     expect(read('.gitignore').split(/\r?\n/)).toContain('demo/');
   });
